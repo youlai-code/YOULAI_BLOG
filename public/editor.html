@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Youlai Note | 编辑器</title>
+    <title>又来笔记 | 编辑器</title>
 
     <link rel="stylesheet" href="/css/editor.css">
     <link rel="stylesheet" href="/css/model.css">
@@ -36,15 +36,15 @@
             <!-- 中间：主要信息输入 -->
             <div class="header-inputs">
                 <div class="input-row top-row">
-                    <input type="text" id="in-title" class="p5-input title-input" placeholder="文章标题 (TITLE)">
-                    <input type="text" id="in-date" class="p5-input small-input" placeholder="日期 (DATE)">
-                    <input type="text" id="in-tags" class="p5-input small-input" placeholder="标签 (TAGS)">
+                    <input type="text" id="in-title" class="p5-input title-input" placeholder="文章标题">
+                    <input type="text" id="in-date" class="p5-input small-input" placeholder="日期">
+                    <input type="text" id="in-tags" class="p5-input small-input" placeholder="标签">
                     <button onclick="aiAutoFill()" class="action-btn btn-ai" title="AI 自动生成信息">
                         <i class="fas fa-bolt"></i> AI 生成
                     </button>
                 </div>
                 <div class="input-row bottom-row">
-                    <input type="text" id="in-summary" class="p5-input flex-input" placeholder="摘要 (SUMMARY)">
+                    <input type="text" id="in-summary" class="p5-input flex-input" placeholder="摘要">
                 </div>
             </div>
         </div>
@@ -67,12 +67,12 @@
                 <input type="file" id="image-upload-input" accept="image/*" style="display:none;"
                     onchange="handleImageUpload(event)">
             </div>
-            <textarea id="markdown-input" placeholder="# Start writing here..."></textarea>
+            <textarea id="markdown-input" placeholder="# 在此开始写作..."></textarea>
         </div>
 
         <div class="preview-pane">
             <div id="preview-content" class="markdown-body">
-                <h1 style="color:#ccc; text-align:center; margin-top:50px;">PREVIEW AREA</h1>
+                <h1 style="color:#ccc; text-align:center; margin-top:50px;">预览区域</h1>
             </div>
         </div>
     </div>
@@ -81,8 +81,8 @@
     <footer class="editor-footer">
         <div class="footer-left">
             <div class="footer-branding">
-                <span style="font-family:'Bangers'; color:var(--p5-red); font-size:1.2rem;">Youlai</span>
-                <span style="font-weight:900; color:white; font-size:1.2rem; margin-left: 5px;">Note</span>
+                <span style="font-family:'Bangers'; color:var(--p5-red); font-size:1.2rem;">又来</span>
+                <span style="font-weight:900; color:white; font-size:1.2rem; margin-left: 5px;">笔记</span>
             </div>
             <div class="word-count-info">
                 <span style="color: #888; font-size: 0.85rem;">字数:</span>

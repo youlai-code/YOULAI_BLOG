@@ -5,29 +5,27 @@ const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const multer = require('multer');
+const matter = require('gray-matter');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const app = express();
 const PORT = 3000;
 require('dotenv').config();
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// 配置图片上传存储
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        // 修改路径指向 public/uploads/images
-        const uploadDir = path.join(__dirname, 'public', 'uploads', 'images');
-        // 确保目录存在
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
+// 初始化 R2 Client
+const r2Client = new S3Client({
+    region: 'auto', // R2 必须填 auto
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     },
-    filename: function (req, file, cb) {
-        // 生成唯一文件名：时间戳 + 随机数 + 原扩展名
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
 });
+
+// 配置图片上传存储 (改为内存模式，不再存本地)
+const storage = multer.memoryStorage();
+
 
 // 文件过滤器：只允许图片类型
 const fileFilter = (req, file, cb) => {
@@ -50,55 +48,123 @@ const upload = multer({
 
 // 允许跨域和解析JSON
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '50mb' })); // 增加限制以防文章过长
 
 // --- 静态资源服务配置 ---
 // 1. 将 public 目录作为根目录服务 (index.html, editor.html 等都在这里)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 4. 提供文章数据接口 (供编辑器使用)
+// 数据文件路径
+const POSTS_DIR = path.join(__dirname, 'public', 'posts');
+
+// Helper: 获取所有文章列表
+function getAllPosts() {
+    if (!fs.existsSync(POSTS_DIR)) return [];
+    
+    const files = fs.readdirSync(POSTS_DIR);
+    const posts = files
+        .filter(file => file.endsWith('.md'))
+        .map(file => {
+            const filePath = path.join(POSTS_DIR, file);
+            const content = fs.readFileSync(filePath, 'utf8');
+            const parsed = matter(content);
+            
+            // 返回元数据 + ID (去掉扩展名)
+            return {
+                id: file.replace('.md', ''),
+                ...parsed.data
+            };
+        })
+        // 过滤掉没有标题的文章 (比如 about.md 如果没有 frontmatter)
+        .filter(post => post.title)
+        // 按日期降序排序 (处理 2026.01.26 格式)
+        .sort((a, b) => {
+            const dateA = a.date ? new Date(a.date.replace(/\./g, '-')) : new Date(0);
+            const dateB = b.date ? new Date(b.date.replace(/\./g, '-')) : new Date(0);
+            return dateB - dateA;
+        });
+        
+    return posts;
+}
+
+// 4. 提供文章数据接口 (供编辑器和首页使用) - 动态从 Frontmatter 读取
 app.get('/posts.json', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'posts', 'posts.json'));
+    try {
+        const posts = getAllPosts();
+        res.json(posts);
+    } catch (error) {
+        console.error("Error reading posts:", error);
+        res.status(500).json({ error: "Failed to load posts" });
+    }
 });
+
 // 5. 提供配置文件接口 (供 Admin Dashboard 使用)
 app.get('/config.json', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'config.json'));
 });
 
+// 路由处理：如果是文件请求(有扩展名)交给 static，否则返回 post.html
 app.get('/posts/:id', (req, res, next) => {
-    // Check if it's a request for a static file (like .md or image)
-    if (req.params.id.includes('.')) {
+    const id = req.params.id;
+    // 如果请求包含 . (例如 images/xxx.png)，则视为静态资源请求
+    if (id.includes('.')) {
         return next();
     }
-    // Otherwise serve the viewer template
-    res.sendFile(path.join(__dirname, 'public', 'post.html'));
+    
+    // 检查是否存在对应的 .md 文件
+    const filePath = path.join(POSTS_DIR, `${id}.md`);
+    if (fs.existsSync(filePath)) {
+        // 返回查看器模板，前端会再请求内容
+        // 注意：前端 post.html 需要逻辑去 fetch 对应的 md 文件内容并解析
+        // 但目前 post.html 可能也是读 markdown？
+        // 原来的逻辑是 serve static public/posts，所以前端可以直接 fetch /posts/id.md
+        // 我们需要确保 /posts/id.md 能被访问到
+        res.sendFile(path.join(__dirname, 'public', 'post.html'));
+    } else {
+        next(); // 404
+    }
 });
 
+// 静态服务 /posts 目录，以便前端 fetch .md 文件
 app.use('/posts', express.static(path.join(__dirname, 'public', 'posts')));
 
-// 数据文件路径
-const POSTS_DIR = path.join(__dirname, 'public', 'posts');
-const LIST_FILE = path.join(__dirname, 'public', 'posts', 'posts.json');
-
-// --- 图片上传接口 ---
-app.post('/api/upload-image', upload.single('image'), (req, res) => {
+// --- 图片上传接口 (R2 Cloudflare) ---
+app.post('/api/upload-image', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: '没有上传文件' });
         }
 
-        // 返回图片的访问路径 (注意这里返回的是相对路径，供前端使用)
-        const imageUrl = `/uploads/images/${req.file.filename}`;
+        // 1. 生成唯一文件名 (保留原扩展名)
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(req.file.originalname);
+        const filename = `blog-images/${uniqueSuffix}${ext}`; // 建议加个文件夹前缀
 
-        console.log(`[IMAGE UPLOADED] ${req.file.filename}`);
+        // 2. 准备上传命令
+        const command = new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: filename,
+            Body: req.file.buffer, // 文件内容
+            ContentType: req.file.mimetype, // 必须设置，否则浏览器可能会直接下载而不是预览
+        });
+
+        // 3. 发送到 R2
+        await r2Client.send(command);
+
+        // 4. 拼接公开访问链接
+        // 最终格式: https://img.yourblog.com/blog-images/xxx.jpg
+        const imageUrl = `${process.env.R2_PUBLIC_DOMAIN}/${filename}`;
+
+        console.log(`[R2 UPLOAD] Success: ${imageUrl}`);
+
         res.json({
             success: true,
             url: imageUrl,
-            filename: req.file.filename
+            filename: filename
         });
     } catch (error) {
-        console.error('上传错误:', error);
-        res.status(500).json({ success: false, message: error.message });
+        console.error('R2 上传错误:', error);
+        res.status(500).json({ success: false, message: '上传云端失败: ' + error.message });
     }
 });
 
@@ -108,24 +174,15 @@ app.post('/api/delete', (req, res) => {
         const { id } = req.body;
         if (!id) return res.json({ success: false, message: "No ID provided" });
 
-        // 1. 读取 posts.json
-        let posts = [];
-        if (fs.existsSync(LIST_FILE)) {
-            posts = JSON.parse(fs.readFileSync(LIST_FILE, 'utf8'));
-        }
-
-        // 2. 过滤掉要删除的文章
-        const newPosts = posts.filter(p => p.id !== id);
-        fs.writeFileSync(LIST_FILE, JSON.stringify(newPosts, null, 2), 'utf8');
-
-        // 3. 删除对应的 .md 文件
+        // 删除对应的 .md 文件
         const filePath = path.join(POSTS_DIR, `${id}.md`);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
+            console.log(`[DELETED] Article ${id} removed.`);
+            res.json({ success: true });
+        } else {
+            res.status(404).json({ success: false, message: "File not found" });
         }
-
-        console.log(`[DELETED] Article ${id} removed.`);
-        res.json({ success: true });
 
     } catch (error) {
         console.error(error);
@@ -137,42 +194,47 @@ app.post('/api/delete', (req, res) => {
 app.post('/api/upload', (req, res) => {
     try {
         const { title, id, date, tags, summary, content, cover } = req.body;
-        console.log(`[API] Upload request received for ${id}. Cover: ${cover}`);
+        console.log(`[API] Upload request received for ${id}.`);
 
         // 1. 检查 posts 文件夹是否存在
         if (!fs.existsSync(POSTS_DIR)) fs.mkdirSync(POSTS_DIR, { recursive: true });
 
-        // 2. 写入 .md 文件
-        const filePath = path.join(POSTS_DIR, `${id}.md`);
-        fs.writeFileSync(filePath, content, 'utf8');
-
-        // 3. 更新 posts.json (文章索引)
-        let posts = [];
-        if (fs.existsSync(LIST_FILE)) {
-            posts = JSON.parse(fs.readFileSync(LIST_FILE, 'utf8'));
+        // 2. 准备 Frontmatter 数据
+        // 确保 tags 是数组
+        let tagsArray = [];
+        if (Array.isArray(tags)) {
+            tagsArray = tags;
+        } else if (typeof tags === 'string') {
+            tagsArray = tags.split('/').map(t => t.trim()).filter(Boolean);
         }
 
-        // 创建新的文章元数据对象
-        const newPostMeta = {
-            id,
+        const frontmatterData = {
             title,
             date,
-            tags,
+            tags: tagsArray,
             summary,
-            cover
+            cover: cover || null
         };
 
-        // 如果已存在同ID，则覆盖（编辑模式），否则添加到开头
-        const existingIndex = posts.findIndex(p => p.id === id);
-        if (existingIndex >= 0) {
-            posts[existingIndex] = newPostMeta;
-        } else {
-            posts.unshift(newPostMeta);
-        }
+        // 3. 使用 gray-matter 生成带头部的 Markdown
+        // 注意：content 应该是纯 Markdown 内容，不包含之前的 frontmatter（如果有）
+        // 如果前端传来的 content 已经包含了 frontmatter（编辑模式可能读入整文件），需要处理吗？
+        // 假设前端编辑器只负责编辑 Body，元数据通过表单传递。
+        // 但如果前端读取的是 raw md，可能会包含 frontmatter。
+        // 简单起见，我们假设前端传来的 content 是纯正文。
+        // 如果 content 包含 frontmatter，gray-matter stringify 会再次包裹，导致双重头部。
+        // 我们应该先解析 content，去掉可能存在的头部，再重新 stringify。
+        
+        const parsed = matter(content);
+        const cleanContent = parsed.content; // 获取去头后的内容
 
-        fs.writeFileSync(LIST_FILE, JSON.stringify(posts, null, 2), 'utf8');
+        const newFileContent = matter.stringify(cleanContent, frontmatterData);
 
-        console.log(`[SUCCESS] Article ${id} saved.`);
+        // 4. 写入 .md 文件
+        const filePath = path.join(POSTS_DIR, `${id}.md`);
+        fs.writeFileSync(filePath, newFileContent, 'utf8');
+
+        console.log(`[SUCCESS] Article ${id} saved with Frontmatter.`);
         res.json({ success: true, message: 'MISSION ACCOMPLISHED' });
 
     } catch (error) {
@@ -257,7 +319,8 @@ app.post('/api/ai-generate', async (req, res) => {
     }
 });
 
-// --- 资源清理接口 ---
+/*
+// --- 资源清理接口 (本地清理已废弃，云端存储无需本地清理) ---
 app.post('/api/cleanup', (req, res) => {
     try {
         console.log("[CLEANUP] Starting resource cleanup...");
@@ -276,22 +339,24 @@ app.post('/api/cleanup', (req, res) => {
         // 2. 收集所有引用
         const referencedFiles = new Set();
 
-        // 2.1 从 posts.json 中收集封面引用
-        if (fs.existsSync(LIST_FILE)) {
-            const posts = JSON.parse(fs.readFileSync(LIST_FILE, 'utf8'));
-            posts.forEach(post => {
-                if (post.cover) {
-                    const filename = path.basename(post.cover);
-                    referencedFiles.add(filename);
-                }
-            });
-        }
-
-        // 2.2 从 posts/*.md 中收集内容引用
+        // 2.1 从所有 .md 文件中收集引用 (Frontmatter Cover + Content)
         if (fs.existsSync(POSTS_DIR)) {
             const mdFiles = fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'));
+            
             mdFiles.forEach(mdFile => {
-                const content = fs.readFileSync(path.join(POSTS_DIR, mdFile), 'utf8');
+                const filePath = path.join(POSTS_DIR, mdFile);
+                const contentRaw = fs.readFileSync(filePath, 'utf8');
+                const parsed = matter(contentRaw);
+                
+                // 检查 Cover
+                if (parsed.data.cover) {
+                    const filename = path.basename(parsed.data.cover);
+                    referencedFiles.add(filename);
+                }
+                
+                // 检查正文内容
+                const content = parsed.content;
+                
                 // 匹配 Markdown 图片: ![alt](/uploads/images/filename)
                 const mdRegex = /\/uploads\/images\/([^\s)]+)/g;
                 let match;
@@ -345,6 +410,7 @@ app.post('/api/cleanup', (req, res) => {
         res.status(500).json({ success: false, message: "Cleanup failed: " + error.message });
     }
 });
+*/
 
 app.listen(PORT, () => {
     console.log(`P5 Phantom Server running at http://localhost:${PORT}`);

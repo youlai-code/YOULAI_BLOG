@@ -27,7 +27,15 @@ async function loadPostForEdit(id) {
             return;
         }
         const contentRes = await fetch(`/posts/${id}.md`);
-        const content = await contentRes.text();
+        let content = await contentRes.text();
+
+        // 移除 Markdown 头部元数据 (Frontmatter) 以避免在编辑器中显示
+        const frontMatterRegex = /^---[\r\n]+([\s\S]*?)[\r\n]+---/;
+        const match = content.match(frontMatterRegex);
+        if (match) {
+            content = content.replace(match[0], '').trim();
+        }
+
         document.getElementById('in-title').value = meta.title;
         document.getElementById('in-date').value = meta.date;
         document.getElementById('in-tags').value = Array.isArray(meta.tags) ? meta.tags.join(' / ') : meta.tags;

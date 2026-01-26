@@ -25,7 +25,7 @@ async function initApp() {
     } catch (err) {
         container.innerHTML = `
             <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red; transform:rotate(-2deg);">
-                <h2 style="font-family:'Bangers'; color:red;">CONNECTION ERROR</h2>
+                <h2 style="font-family:'Bangers'; color:red;">连接错误</h2>
                 <p>无法连接到 Phantom Network (posts.json).</p>
                 <p>请确保已运行: node server.js</p>
             </div>
@@ -91,7 +91,7 @@ function renderPage(page) {
     container.innerHTML = '';
 
     if (currentFilteredPosts.length === 0) {
-        container.innerHTML = `<h2 style="color:white; font-family:'Bangers'; margin-top:50px;">NO DATA FOUND...</h2>`;
+        container.innerHTML = `<h2 style="color:white; font-family:'Bangers'; margin-top:50px;">未找到数据...</h2>`;
         return;
     }
 

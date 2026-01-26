@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOADING... | CODE PHANTOM</title>
+    <title>加载中... | 又来笔记</title>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+SC:wght@400;700;900&display=swap');
@@ -316,6 +316,22 @@
             box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.2);
         }
 
+        /* 徽章/小图标样式修正 */
+        .markdown-body .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 10px 0;
+            justify-content: flex-start; /* 左对齐 */
+        }
+        
+        .markdown-body .badges img {
+            margin: 0;
+            border: none;
+            box-shadow: none;
+            display: inline-block;
+        }
+
         /* 代码块样式 */
         .markdown-body pre {
             background: #1a1a1a !important;
@@ -463,18 +479,18 @@
 <body>
 
     <div id="loading-screen">
-        <div class="loading-text">TAKE YOUR TIME...</div>
+        <div class="loading-text">加载中...</div>
     </div>
 
     <nav class="mini-nav">
-        <a href="/" class="home-btn"><span>◄ youlainote</span></a>
+        <a href="/" class="home-btn"><span>◄ 又来笔记</span></a>
     </nav>
 
     <div id="error-container" style="display:none;"></div>
 
     <div class="layout-container" id="main-content">
         <aside class="toc-sidebar">
-            <h3 class="toc-title">NAVIGATE</h3>
+            <h3 class="toc-title">目录</h3>
             <ul id="toc-list"></ul>
         </aside>
 
@@ -515,23 +531,56 @@
             const errorContainer = document.getElementById('error-container');
 
             if (!postId) {
-                showError("NO ID FOUND - TARGET LOST");
+                showError("未找到 ID - 目标丢失");
                 return;
             }
 
             // 动态请求 MD 文件
             fetch(`/posts/${postId}.md`)
                 .then(response => {
-                    if (!response.ok) throw new Error("FILE NOT FOUND (404)");
+                    if (!response.ok) throw new Error("文件未找到 (404)");
                     return response.text();
                 })
                 .then(text => {
+                    // 0. 解析并移除 YAML Frontmatter
+                    let metadata = {};
+                    const frontMatterRegex = /^---[\r\n]+([\s\S]*?)[\r\n]+---/;
+                    const match = text.match(frontMatterRegex);
+                    
+                    if (match) {
+                        // 简单的 YAML 解析
+                        const yaml = match[1];
+                        yaml.split('\n').forEach(line => {
+                            const parts = line.split(':');
+                            if (parts.length >= 2) {
+                                const key = parts[0].trim();
+                                const value = parts.slice(1).join(':').trim();
+                                // 处理数组 [a, b]
+                                if (value.startsWith('[') && value.endsWith(']')) {
+                                     metadata[key] = value.slice(1, -1).split(',').map(s => s.trim());
+                                } else {
+                                     metadata[key] = value;
+                                }
+                            }
+                        });
+                        // 从正文中移除 Frontmatter
+                        text = text.replace(match[0], '');
+                    }
+
                     // 1. 解析 MD -> HTML
                     renderArea.innerHTML = marked.parse(text);
 
-                    // 设置标题
+                    // 设置标题 (优先使用 Frontmatter 标题)
                     const h1 = renderArea.querySelector('h1');
-                    if (h1) document.title = h1.innerText + " | CODE PHANTOM";
+                    const pageTitle = metadata.title || (h1 ? h1.innerText : 'Untitled');
+                    document.title = pageTitle + " | 又来笔记";
+                    
+                    // 如果 Frontmatter 有标题且正文没 H1，可以考虑手动插入标题 (可选)
+                    // if (metadata.title && !h1) {
+                    //     const titleEl = document.createElement('h1');
+                    //     titleEl.innerText = metadata.title;
+                    //     renderArea.prepend(titleEl);
+                    // }
 
                     // 2. 【新】修正图片路径
                     // MD里写 ![xx](img/1.png) -> 浏览器解析为 root/img/1.png (错)

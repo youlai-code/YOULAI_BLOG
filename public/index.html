@@ -35,20 +35,21 @@
 
     <nav class="top-nav">
         <div class="marquee-wrap">
-            <div class="marquee-content">Loading...</div>
+            <div class="marquee-content">加载中...</div>
         </div>
-        <a href="#" class="brand-logo" onclick="filterPosts('HOME'); return false;">Youlai Note (Admin)</a>
+        <a href="#" class="brand-logo" onclick="filterPosts('HOME'); return false;">又来笔记 (后台)</a>
         <div class="menu-list">
-            <a href="#" id="btn-home" class="menu-btn active" onclick="filterPosts('HOME'); return false;">HOME</a>
-            <a href="/posts/about" id="btn-about" class="menu-btn">ABOUT</a>
+            <a href="#" id="btn-home" class="menu-btn active" onclick="filterPosts('HOME'); return false;">首页</a>
+            <a href="#" id="btn-discovery" class="menu-btn" onclick="alert('功能开发中...'); return false;">发现</a>
+            <a href="/posts/about" id="btn-about" class="menu-btn">关于</a>
 
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="SEARCH LOGS..." oninput="searchPosts(this.value)">
+                <input type="text" id="search-input" placeholder="搜索日志..." oninput="searchPosts(this.value)">
                 <i class="fas fa-search search-icon"></i>
             </div>
 
             <a href="editor.html" class="menu-btn" style="background:var(--p5-red); color:white; margin-left:20px;">
-                + NEW LOG
+                + 新建日志
             </a>
         </div>
     </nav>
@@ -56,13 +57,13 @@
     <div class="container">
         <div style="flex:3; display:flex; flex-direction:column;">
             <main class="content-area" id="blog-list-container">
-                <h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">INITIALIZING...</h2>
+                <h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">初始化中...</h2>
             </main>
         </div>
 
         <aside class="sidebar-area">
             <div class="widget-box">
-                <div class="widget-title">OWNER</div>
+                <div class="widget-title">站长</div>
                 <div class="profile-mini" style="margin-top: 15px;">
                     <img src="/img/head.jpg" alt="Avatar" onerror="this.src='https://placehold.co/60x60'">
                     <div>
@@ -80,7 +81,7 @@
                 </div>
             </div>
             <div class="widget-box">
-                <div class="widget-title">CATEGORIES</div>
+                <div class="widget-title">分类</div>
                 <div class="tag-cloud" style="margin-top: 15px;">
                     <a href="#" class="tag-item" onclick="filterPosts('UNITY'); return false;"># UNITY3D</a>
                     <a href="#" class="tag-item" onclick="filterPosts('CSHARP'); return false;"># CSHARP</a>
@@ -94,8 +95,7 @@
 
     <footer class="footer-bar">
         <div class="footer-info">
-            <div><span style="font-weight:900; color:var(--p5-yellow);">© 2025 YOULAI NOTE.</span> All code is
-                compiled.</div>
+            <div><span style="font-weight:900; color:var(--p5-yellow);">© 2025 又来笔记.</span> 代码即世界.</div>
             <a href="https://beian.miit.gov.cn/" style="margin-top: 8px; font-size: 0.85rem; color: #aaa;">
                 湘ICP备2026001893号</a>
         </div>
