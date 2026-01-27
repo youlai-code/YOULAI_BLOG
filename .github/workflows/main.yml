@@ -1,4 +1,4 @@
-name: Deploy via Shell Script
+name: Deploy to Tencent Cloud
 
 on:
   push:
@@ -6,15 +6,15 @@ on:
 
 jobs:
   deploy:
-    name: Call Server Script
+    name: Trigger Server Script
     runs-on: ubuntu-latest
     steps:
-    - name: Execute deploy.sh via SSH
+    - name: Call deploy.sh via SSH
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
         port: 22
-        # 这里只需要一行命令：执行脚本
+        # 只需要这一行，让服务器自己动
         script: /www/wwwroot/deploy.sh
