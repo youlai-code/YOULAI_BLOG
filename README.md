@@ -1,16 +1,15 @@
-# 🎭 YOULAI NOTE | 又来的技术笔记
+# YOULAI NOTE | 又来的技术笔记
 
 <div align="center">
 
-**Welcome to the Metaverse of Code!**
+## **Welcome to the Metaverse of Code!**
 
 一个致敬《女神异闻录5 皇家版》(Persona 5 Royal) 风格的个人技术博客系统
-
-![P5R Style](https://img.shields.io/badge/Style-Persona%205%20Royal-D20505?style=for-the-badge)
-![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js)
-![License](https://img.shields.io/badge/License-Personal-fce100?style=for-the-badge)
-
 </div>
+
+![P5R Style](https://img.shields.io/badge/Style-Persona%205%20Royal-D20505?style=for-the-badge)![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js)![License](https://img.shields.io/badge/License-Personal-fce100?style=for-the-badge)
+
+
 
 ---
 
@@ -44,8 +43,9 @@
 - **dotenv** - 环境变量管理
 
 ### 数据存储
-- **JSON** - `public/posts.json` (文章索引)
-- **Markdown** - `public/posts/*.md` (文章内容)
+ - **Markdown + YAML Frontmatter** - `public/posts/*.md`（标题、日期、标签、摘要、封面均写在头部）
+ - **API 列表接口** - 动态生成 `GET /posts.json`，后端读取 Frontmatter 汇总文章索引
+ - **图片存储** - 使用 Cloudflare R2 云存储，返回可公开访问的 URL
 
 ---
 
@@ -70,8 +70,7 @@ YOULAI_BLOG/
 │   │   ├── cleanup.js     # 资源清理脚本
 │   │   └── model.js       # 弹窗组件
 │   ├── posts/             # 文章存储
-│   │   ├── posts.json     # 文章索引
-│   │   └── *.md           # Markdown 文件
+│   │   └── *.md           # Markdown 文件（含 Frontmatter）
 │   ├── uploads/           # 上传的图片
 │   │   └── images/        # 图片文件
 │   └── config.json        # 网站配置(社交链接等)
@@ -87,7 +86,7 @@ YOULAI_BLOG/
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/inkmark556/YOULAI_BLOG.git
+git clone https://github.com/youlai-code/YOULAI_BLOG.git
 cd YOULAI_BLOG
 ```
 
@@ -103,6 +102,13 @@ npm install
 
 ```env
 DEEPSEEK_API_KEY=your_api_key_here
+
+# Cloudflare R2（图片云存储）
+R2_ACCOUNT_ID=xxx
+R2_ACCESS_KEY_ID=xxx
+R2_SECRET_ACCESS_KEY=xxx
+R2_BUCKET_NAME=xxx
+R2_PUBLIC_DOMAIN=https://img.example.com
 ```
 
 ### 4. 启动服务器
@@ -118,6 +124,8 @@ node server.js
 - **📝 博客主页**: http://localhost:3000/
 - **⚙️ 管理后台**: http://localhost:3000/index.html
 - **✍️ 文章编辑器**: http://localhost:3000/editor.html
+- **📚 文章列表 API**: http://localhost:3000/posts.json
+- **📄 文章内容**: http://localhost:3000/posts/<id>.md
 
 ---
 
@@ -141,13 +149,15 @@ node server.js
 1. 在管理后台点击文章卡片的 **DELETE** 按钮
 2. 确认删除
 
-### 清理未使用的图片
+---
 
-```bash
-cleanup.bat
-```
+## 🔌 后端 API
 
-该脚本会扫描 `public/uploads/images/` 目录，删除所有未被文章引用的图片。
+- `GET /posts.json`：返回文章列表（由 `public/posts/*.md` 的 Frontmatter 动态生成）
+- `GET /posts/:id.md`：返回指定文章的 Markdown 原文
+- `POST /api/upload`：保存文章（后端写入 Frontmatter 到 `.md` 文件）
+- `POST /api/delete`：删除文章（删除 `.md` 文件）
+- `POST /api/ai-generate`：调用 DeepSeek 生成文章标题/摘要/标签
 
 ---
 
@@ -171,29 +181,7 @@ cleanup.bat
 
 ---
 
-## 🌐 部署指南
-
-### 部署到 Vercel (推荐)
-
-1. 在 Vercel 导入 GitHub 仓库
-2. 设置环境变量 `DEEPSEEK_API_KEY`
-3. 构建命令留空（静态文件）
-4. 输出目录: `.` (根目录)
-
-### 部署到 Netlify
-
-1. 连接 GitHub 仓库
-2. 构建命令: (留空)
-3. 发布目录: `.`
-4. 设置环境变量
-
-### ⚠️ GitHub Pages 限制
-
-GitHub Pages 仅支持静态文件，**无法运行 Node.js 后端**。如需完整功能(文章管理、AI 生成等)，请使用 Vercel 或 Netlify。
-
----
-
-## 🔧 配置文件
+## 🔧 配置文件与数据分离
 
 ### `config.json`
 
@@ -217,19 +205,23 @@ GitHub Pages 仅支持静态文件，**无法运行 Node.js 后端**。如需完
 
 ---
 
-## 📦 NPM 脚本
+## 🚚 部署与数据分离
 
-```json
-{
-  "dev": "astro dev",      // Astro 开发服务器(未使用)
-  "build": "astro build",  // Astro 构建(未使用)
-  "preview": "astro preview" // Astro 预览(未使用)
-}
-```
+### Git 数据分离（防丢失、防冲突）
+- `.gitignore` 忽略：`public/posts/`、`public/uploads/`、`public/config.json`
+- 使用软连接在服务器上将数据目录挂载到项目内：
+  ```bash
+  ln -sfn /var/www/blog_data/posts ./public/posts
+  ln -sfn /var/www/blog_data/uploads ./public/uploads
+  ln -sf /var/www/blog_data/config.json ./public/config.json
+  ```
 
-**注意**: 当前项目不依赖 Astro，直接运行 `node server.js` 即可。
+### GitHub Actions（自动部署到 VPS）
+- 在 `.github/workflows/deploy.yml` 中使用 `appleboy/ssh-action` 执行部署脚本
+- 仓库 Secrets 需要配置：`HOST`、`USERNAME`、`KEY`、`PORT`
 
 ---
+
 
 ## 🤝 贡献
 
@@ -252,10 +244,3 @@ GitHub Pages 仅支持静态文件，**无法运行 Node.js 后端**。如需完
 
 ---
 
-<div align="center">
-
-**Take Your Heart! 偷取技术的真谛** 🎭
-
-*这不是游戏，这是反叛!*
-
-</div>
