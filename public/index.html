@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>又来笔记 | 管理后台</title>
+    <title>又来博客</title>
     <link rel="icon" type="image/jpeg" href="/img/icon.png">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/background.css">
@@ -12,8 +12,11 @@
     <link rel="stylesheet" href="/css/components.css">
     <link rel="stylesheet" href="/css/posts.css">
     <link rel="stylesheet" href="/css/model.css">
+    <link rel="stylesheet" href="/css/markdown.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
     <script>window.IS_ADMIN = true;</script>
 </head>
 
@@ -37,19 +40,18 @@
         <div class="marquee-wrap">
             <div class="marquee-content">加载中...</div>
         </div>
-        <a href="#" class="brand-logo" onclick="filterPosts('HOME'); return false;">又来笔记 (后台)</a>
+        <a href="#" class="brand-logo" onclick="filterPosts('HOME'); return false;">YOULAI NOTE</a>
         <div class="menu-list">
             <a href="#" id="btn-home" class="menu-btn active" onclick="filterPosts('HOME'); return false;">首页</a>
-            <a href="#" id="btn-discovery" class="menu-btn" onclick="alert('功能开发中...'); return false;">发现</a>
-            <a href="/posts/about" id="btn-about" class="menu-btn">关于</a>
-
+            <a href="#" id="btn-discovery" class="menu-btn" onclick="showDiscoveryPage(); return false;">发现</a>
+            <a href="#" id="btn-about" class="menu-btn" onclick="showAboutPage(); return false;">关于</a>
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="搜索日志..." oninput="searchPosts(this.value)">
                 <i class="fas fa-search search-icon"></i>
             </div>
 
             <a href="editor.html" class="menu-btn" style="background:var(--p5-red); color:white; margin-left:20px;">
-                + 新建日志
+                + ADD BOLG
             </a>
         </div>
     </nav>
@@ -103,6 +105,13 @@
 
     <script src="/js/model.js"></script>
     <script src="/js/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
 </body>
 
 </html>

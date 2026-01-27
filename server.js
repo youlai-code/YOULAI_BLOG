@@ -10,7 +10,7 @@ const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const app = express();
 const PORT = 3000;
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 // 初始化 R2 Client

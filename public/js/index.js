@@ -185,6 +185,214 @@ function searchPosts(keyword) {
     renderPage(1);
 }
 
+// 6. 发现页：标签云
+function showDiscoveryPage() {
+    // 1. 按钮高亮
+    document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+    const discoveryBtn = document.getElementById('btn-discovery');
+    if (discoveryBtn) discoveryBtn.classList.add('active');
+
+    // 2. 统计标签
+    const tagCounts = {};
+    allPostsCache.forEach(post => {
+        let tags = [];
+        if (Array.isArray(post.tags)) {
+            tags = post.tags;
+        } else if (typeof post.tags === 'string') {
+            tags = post.tags.split(/[\s,]+/);
+        }
+        
+        tags.forEach(tag => {
+            const cleanTag = tag.trim().toUpperCase();
+            if (cleanTag) {
+                tagCounts[cleanTag] = (tagCounts[cleanTag] || 0) + 1;
+            }
+        });
+    });
+
+    // 3. 渲染标签云
+    const container = document.getElementById('blog-list-container');
+    container.innerHTML = '';
+    container.style.opacity = 0;
+
+    const cloudWrapper = document.createElement('div');
+    cloudWrapper.className = 'discovery-cloud';
+    // 内联样式，保持 Phantom 风格
+    cloudWrapper.style.padding = '40px';
+    cloudWrapper.style.display = 'flex';
+    cloudWrapper.style.flexWrap = 'wrap';
+    cloudWrapper.style.justifyContent = 'center';
+    cloudWrapper.style.gap = '25px';
+
+    const sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+
+    // 计算最大最小 count 用于缩放
+    let maxCount = 0;
+    let minCount = Infinity;
+    sortedTags.forEach(([tag, count]) => {
+        if (count > maxCount) maxCount = count;
+        if (count < minCount) minCount = count;
+    });
+
+    if (sortedTags.length === 0) {
+        cloudWrapper.innerHTML = `<h2 style="color:white; font-family:'Bangers';">暂无标签...</h2>`;
+    } else {
+        sortedTags.forEach(([tag, count]) => {
+            const sticker = document.createElement('div');
+            // 随机旋转角度 (-5 ~ 5度)
+            const rotate = (Math.random() * 10 - 5).toFixed(1);
+            
+            // 计算字体大小 (1.2rem ~ 3rem)
+            let fontSize = 1.2;
+            if (maxCount > minCount) {
+                fontSize = 1.2 + ((count - minCount) / (maxCount - minCount)) * 1.8; 
+            } else {
+                fontSize = 1.5; // 只有一个数量级时
+            }
+            
+            // 样式定义
+            sticker.style.cssText = `
+                background: var(--p5-yellow);
+                color: var(--p5-black);
+                padding: 10px 25px;
+                font-family: 'SimHei', 'Microsoft YaHei', sans-serif; /* 黑体 */
+                font-weight: 900;
+                font-size: ${fontSize}rem;
+                cursor: pointer;
+                box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+                border: 3px solid black;
+                transform: rotate(${rotate}deg);
+                transition: transform 0.2s, box-shadow 0.2s;
+                position: relative;
+                user-select: none;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            `;
+
+            sticker.innerHTML = `
+                <span>${tag}</span>
+                <span style="
+                    background: var(--p5-red);
+                    color: white;
+                    border-radius: 12px;
+                    padding: 0 8px;
+                    font-size: 0.6em; /* 相对主字体缩小 */
+                    border: 2px solid black;
+                    font-family: 'Bangers', sans-serif;
+                    min-width: 20px;
+                    text-align: center;
+                ">${count}</span>
+            `;
+
+            // 交互效果
+            sticker.onmouseover = () => { 
+                sticker.style.transform = `scale(1.1) rotate(${rotate}deg)`; 
+                sticker.style.zIndex = 10;
+            };
+            sticker.onmouseout = () => { 
+                sticker.style.transform = `rotate(${rotate}deg)`; 
+                sticker.style.zIndex = 1;
+            };
+            sticker.onclick = () => {
+                // 点击标签 -> 搜索该标签
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) searchInput.value = tag;
+                searchPosts(tag);
+            };
+
+            cloudWrapper.appendChild(sticker);
+        });
+    }
+
+    container.appendChild(cloudWrapper);
+    
+    // 淡入动画
+    setTimeout(() => { container.style.opacity = 1; }, 50);
+}
+
+// 7. 关于页：动态加载
+async function showAboutPage() {
+    // 1. 按钮高亮
+    document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+    const aboutBtn = document.getElementById('btn-about');
+    if (aboutBtn) aboutBtn.classList.add('active');
+
+    const container = document.getElementById('blog-list-container');
+    container.style.opacity = 0;
+    container.innerHTML = `<h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">LOADING DATA...</h2>`;
+
+    try {
+        const response = await fetch('/posts/about.md');
+        if (!response.ok) throw new Error("About page not found");
+        
+        let text = await response.text();
+        
+        // 0. 解析并移除 YAML Frontmatter
+        let metadata = {};
+        const frontMatterRegex = /^---[\r\n]+([\s\S]*?)[\r\n]+---/;
+        const match = text.match(frontMatterRegex);
+        
+        if (match) {
+            // 简单的 YAML 解析
+            const yaml = match[1];
+            yaml.split('\n').forEach(line => {
+                const parts = line.split(':');
+                if (parts.length >= 2) {
+                    const key = parts[0].trim();
+                    const value = parts.slice(1).join(':').trim();
+                    // 处理数组 [a, b]
+                    if (value.startsWith('[') && value.endsWith(']')) {
+                            metadata[key] = value.slice(1, -1).split(',').map(s => s.trim());
+                    } else {
+                            metadata[key] = value;
+                    }
+                }
+            });
+            // 从正文中移除 Frontmatter
+            text = text.replace(match[0], '');
+        }
+
+        // 1. 解析 MD -> HTML
+        const htmlContent = marked.parse(text);
+
+        // 2. 渲染
+        container.innerHTML = `
+            <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
+                ${htmlContent}
+            </div>
+        `;
+
+        // 3. 修正图片路径
+        const imgs = container.querySelectorAll('img');
+        imgs.forEach(img => {
+            const src = img.getAttribute('src');
+            // 如果不是网络图片(http)且不是绝对路径(/)
+            if (!src.startsWith('http') && !src.startsWith('//') && !src.startsWith('/')) {
+                img.src = '/posts/' + src; 
+            }
+        });
+
+        // 4. 代码高亮
+        if (window.Prism) {
+            Prism.highlightAllUnder(container);
+        }
+
+        // 淡入动画
+        setTimeout(() => { container.style.opacity = 1; }, 50);
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `
+            <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red;">
+                <h2 style="font-family:'Bangers'; color:red;">ERROR 404</h2>
+                <p>Failed to load About page.</p>
+            </div>
+        `;
+        container.style.opacity = 1;
+    }
+}
+
 // js/index.js 中的 deletePost 函数
 
 async function deletePost(id) {
