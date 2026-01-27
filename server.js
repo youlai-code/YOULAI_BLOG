@@ -6,6 +6,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const matter = require('gray-matter');
+const backupService = require('./backup_service');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const app = express();
