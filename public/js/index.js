@@ -53,15 +53,52 @@ async function initApp() {
     }
 }
 
-// 加载社交媒体链接
+// 加载社交媒体链接和站点配置
 async function loadSocialLinks() {
     try {
         const res = await fetch('config.json');
         if (!res.ok) return; // 如果配置文件不存在，静默失败
 
         const config = await res.json();
-        const container = document.getElementById('social-links-container');
+        
+        // --- 1. 加载 Owner 信息 ---
+        if (config.owner) {
+            const avatarEl = document.getElementById('owner-avatar');
+            const nameEl = document.getElementById('owner-name');
+            const titleEl = document.getElementById('owner-title');
+            const bioEl = document.getElementById('owner-bio');
 
+            if (avatarEl && config.owner.avatar) {
+                // 如果不是绝对路径且不以/开头，尝试自动修正（假设在根目录）
+                let src = config.owner.avatar;
+                if (!src.startsWith('http') && !src.startsWith('/')) {
+                    src = '/' + src;
+                }
+                avatarEl.src = src;
+            }
+            if (nameEl && config.owner.name) nameEl.innerText = config.owner.name;
+            if (titleEl && config.owner.title) titleEl.innerText = config.owner.title;
+            if (bioEl && config.owner.bio) bioEl.innerText = config.owner.bio;
+        }
+
+        // --- 2. 加载 Footer 信息 ---
+        if (config.footer) {
+            if (config.footer.marquee) {
+                const marqueeContent = document.querySelector('.marquee-content');
+                if (marqueeContent) {
+                    marqueeContent.innerText = config.footer.marquee;
+                }
+            }
+            if (config.footer.copyright) {
+                const copyrightEl = document.getElementById('footer-copyright');
+                if (copyrightEl) {
+                    copyrightEl.innerText = config.footer.copyright;
+                }
+            }
+        }
+
+        // --- 3. 加载 Social 链接 ---
+        const container = document.getElementById('social-links-container');
         if (!container || !config.social) return;
 
         // 生成社交媒体图标
@@ -91,15 +128,8 @@ async function loadSocialLinks() {
             container.appendChild(link);
         });
 
-        // 加载底部滚动文字
-        if (config.footer && config.footer.marquee) {
-            const marqueeContent = document.querySelector('.marquee-content');
-            if (marqueeContent) {
-                marqueeContent.innerText = config.footer.marquee;
-            }
-        }
     } catch (err) {
-        console.error('Failed to load social links:', err);
+        console.error('Failed to load site config:', err);
     }
 }
 

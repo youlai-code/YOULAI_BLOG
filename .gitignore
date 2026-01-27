@@ -39,6 +39,7 @@ coverage/
 
 # 忽略其他常见文件
 *.log
+youlainote.cn_nginx/
 
 # Astro 相关 (已移除)
 .astro/
@@ -50,7 +51,8 @@ coverage/
 # --- 忽略数据文件 (服务器产生的数据) ---
 public/posts/
 public/uploads/
-public/config.json
+backups/
+
 
 # 保留文件夹结构 (可选，防止报错)
 !public/posts/.gitkeep

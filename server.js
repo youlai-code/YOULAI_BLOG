@@ -13,11 +13,7 @@ const PORT = 3000;
 require('dotenv').config({ override: true });
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
-// Debug middleware
-app.use((req, res, next) => {
-    console.log(`[REQUEST] ${req.method} ${req.url}`);
-    next();
-});
+
 
 // 初始化 R2 Client
 const r2Client = new S3Client({
@@ -54,7 +50,7 @@ const upload = multer({
 
 // 允许跨域和解析JSON
 app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' })); // 增加限制以防文章过长
+app.use(express.json({ limit: '50mb' })); // 增加限制以防文章过长
 
 // --- 静态资源服务配置 ---
 // 1. 将 public 目录作为根目录服务 (index.html, editor.html 等都在这里)
@@ -66,7 +62,7 @@ const POSTS_DIR = path.join(__dirname, 'public', 'posts');
 // Helper: 获取所有文章列表
 function getAllPosts() {
     if (!fs.existsSync(POSTS_DIR)) return [];
-    
+
     const files = fs.readdirSync(POSTS_DIR);
     const posts = files
         .filter(file => file.endsWith('.md'))
@@ -74,7 +70,7 @@ function getAllPosts() {
             const filePath = path.join(POSTS_DIR, file);
             const content = fs.readFileSync(filePath, 'utf8');
             const parsed = matter(content);
-            
+
             // 返回元数据 + ID (去掉扩展名)
             return {
                 id: file.replace('.md', ''),
@@ -89,7 +85,7 @@ function getAllPosts() {
             const dateB = b.date ? new Date(b.date.replace(/\./g, '-')) : new Date(0);
             return dateB - dateA;
         });
-        
+
     return posts;
 }
 
@@ -112,7 +108,7 @@ app.get('/config.json', (req, res) => {
 // 路由处理：如果是文件请求(有扩展名)交给 static，否则返回 post.html
 app.get('/posts/:id', (req, res, next) => {
     const id = req.params.id;
-    
+
     // 优先处理 .md 文件请求 (修复 404 问题)
     if (id.endsWith('.md')) {
         const filePath = path.join(POSTS_DIR, id);
@@ -127,7 +123,7 @@ app.get('/posts/:id', (req, res, next) => {
     if (id.includes('.')) {
         return next();
     }
-    
+
     // 检查是否存在对应的 .md 文件 (用于无后缀访问，返回 post.html)
     const filePath = path.join(POSTS_DIR, `${id}.md`);
     if (fs.existsSync(filePath)) {
@@ -233,15 +229,6 @@ app.post('/api/upload', (req, res) => {
             cover: cover || null
         };
 
-        // 3. 使用 gray-matter 生成带头部的 Markdown
-        // 注意：content 应该是纯 Markdown 内容，不包含之前的 frontmatter（如果有）
-        // 如果前端传来的 content 已经包含了 frontmatter（编辑模式可能读入整文件），需要处理吗？
-        // 假设前端编辑器只负责编辑 Body，元数据通过表单传递。
-        // 但如果前端读取的是 raw md，可能会包含 frontmatter。
-        // 简单起见，我们假设前端传来的 content 是纯正文。
-        // 如果 content 包含 frontmatter，gray-matter stringify 会再次包裹，导致双重头部。
-        // 我们应该先解析 content，去掉可能存在的头部，再重新 stringify。
-        
         const parsed = matter(content);
         const cleanContent = parsed.content; // 获取去头后的内容
 
@@ -269,13 +256,13 @@ app.post('/api/ai-generate', async (req, res) => {
         console.log("正在呼叫 DeepSeek...");
 
         const systemPrompt = `
-        你是一个专业的Unity技术博客助手。请分析用户输入的 Markdown 文章内容，并提取/生成以下元数据。
+        你是一个专业的技术博客助手。请分析用户输入的 Markdown 文章内容，并提取/生成以下元数据。
         请严格按照 JSON 格式返回，不要包含 markdown 代码块标记（如 \`\`\`json）。
         JSON 结构如下：
         {
             "title": "提取或生成一个吸引人的标题",
             "summary": "生成一段80字以内的精炼摘要",
-            "tags": "提取1-3个相关技术标签，全大写，用 ' / ' 分隔 (例如: UNITY / SHADER / C#)"
+            "tags": "提取1-3个相关技术标签(优先单标签)，首字母大写，用 ' / ' 分隔 (例如: Unity / Shader / C#)"
         }
         `;
 
@@ -336,99 +323,17 @@ app.post('/api/ai-generate', async (req, res) => {
     }
 });
 
-/*
-// --- 资源清理接口 (本地清理已废弃，云端存储无需本地清理) ---
-app.post('/api/cleanup', (req, res) => {
-    try {
-        console.log("[CLEANUP] Starting resource cleanup...");
-
-        // 1. 获取所有上传的图片
-        const uploadDir = path.join(__dirname, 'public', 'uploads', 'images');
-        if (!fs.existsSync(uploadDir)) {
-            return res.json({ success: true, message: "No uploads directory found.", deleted: [], spaceReclaimed: 0 });
-        }
-
-        const allFiles = fs.readdirSync(uploadDir);
-        const imageFiles = allFiles.filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
-
-        console.log(`[CLEANUP] Found ${imageFiles.length} images in uploads.`);
-
-        // 2. 收集所有引用
-        const referencedFiles = new Set();
-
-        // 2.1 从所有 .md 文件中收集引用 (Frontmatter Cover + Content)
-        if (fs.existsSync(POSTS_DIR)) {
-            const mdFiles = fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.md'));
-            
-            mdFiles.forEach(mdFile => {
-                const filePath = path.join(POSTS_DIR, mdFile);
-                const contentRaw = fs.readFileSync(filePath, 'utf8');
-                const parsed = matter(contentRaw);
-                
-                // 检查 Cover
-                if (parsed.data.cover) {
-                    const filename = path.basename(parsed.data.cover);
-                    referencedFiles.add(filename);
-                }
-                
-                // 检查正文内容
-                const content = parsed.content;
-                
-                // 匹配 Markdown 图片: ![alt](/uploads/images/filename)
-                const mdRegex = /\/uploads\/images\/([^\s)]+)/g;
-                let match;
-                while ((match = mdRegex.exec(content)) !== null) {
-                    referencedFiles.add(match[1]);
-                }
-
-                // 匹配 HTML 图片: <img src="/uploads/images/filename">
-                const htmlRegex = /src=["']\/uploads\/images\/([^"']+)["']/g;
-                while ((match = htmlRegex.exec(content)) !== null) {
-                    referencedFiles.add(match[1]);
-                }
-            });
-        }
-
-        console.log(`[CLEANUP] Found ${referencedFiles.size} referenced images.`);
-
-        // 3. 找出未引用的图片并删除
-        const deletedFiles = [];
-        let spaceReclaimed = 0;
-
-        imageFiles.forEach(file => {
-            if (!referencedFiles.has(file)) {
-                const filePath = path.join(uploadDir, file);
-                const stats = fs.statSync(filePath);
-                spaceReclaimed += stats.size;
-
-                fs.unlinkSync(filePath);
-                deletedFiles.push(file);
-                console.log(`[CLEANUP] Deleted orphan: ${file}`);
-            }
-        });
-
-        const formatSize = (bytes) => {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        };
-
-        res.json({
-            success: true,
-            message: `Cleanup complete. Deleted ${deletedFiles.length} files.`,
-            deleted: deletedFiles,
-            spaceReclaimed: formatSize(spaceReclaimed)
-        });
-
-    } catch (error) {
-        console.error("[CLEANUP] Error:", error);
-        res.status(500).json({ success: false, message: "Cleanup failed: " + error.message });
-    }
-});
-*/
-
 app.listen(PORT, () => {
-    console.log(`P5 Phantom Server running at http://localhost:${PORT}`);
+    console.log('----------------------------------------------------------');
+    console.log('   🃏 YOULAI NOTE | P5R 风格个人技术博客系统启动成功！');
+    console.log('----------------------------------------------------------');
+    console.log(`   📝 博客主页:      http://localhost:${PORT}/`);
+    console.log('----------------------------------------------------------');
+
+    // 初始化备份任务
+    backupService.initBackupTask();
+
+    console.log('----------------------------------------------------------');
+    console.log('   Welcome to the Metaverse of Code!');
+    console.log('----------------------------------------------------------');
 });

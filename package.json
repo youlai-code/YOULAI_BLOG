@@ -5,12 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node server.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/inkmark556/YOULAI_BLOG.git"
+    "url": "git+https://github.com/youlai-code/YOULAI_BLOG.git"
   },
   "keywords": [
     "blog",
@@ -22,17 +21,17 @@
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/inkmark556/YOULAI_BLOG/issues"
+    "url": "https://github.com/youlai-code/YOULAI_BLOG/issues"
   },
-  "homepage": "https://github.com/inkmark556/YOULAI_BLOG#readme",
+  "homepage": "https://github.com/youlai-code/YOULAI_BLOG#readme",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.975.0",
-    "body-parser": "^2.2.1",
+    "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "gray-matter": "^4.0.3",
-    "marked": "^17.0.1",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "node-schedule": "^2.1.1"
   }
 }
