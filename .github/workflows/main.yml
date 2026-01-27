@@ -1,0 +1,31 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          # 1. 进入项目目录 (请确保此路径正确)
+          cd /var/www/YOULAI_BLOG
+          
+          # 2. 拉取最新代码
+          git pull origin master
+          
+          # 3. 建立软连接 (关联数据仓库)
+          # -s: 软连接, -f: 强制(如果存在则覆盖), -n: 如果目标是目录，当作普通文件处理
+          ln -sfn /var/www/blog_data/posts ./public/posts
+          ln -sfn /var/www/blog_data/uploads ./public/uploads
+          ln -sf /var/www/blog_data/config.json ./public/config.json
+          
