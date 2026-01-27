@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy to Tencent Cloud
 
 on:
   push:
@@ -9,23 +9,34 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     steps:
-    - name: Deploy
+    - name: Deploy via SSH
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
-        port: ${{ secrets.PORT }}
+        port: 22  # 腾讯云默认是 22
         script: |
-          # 1. 进入项目目录 (请确保此路径正确)
+          # 1. 进入项目目录 (根据你修改工作.md里的计划)
           cd /var/www/YOULAI_BLOG
           
           # 2. 拉取最新代码
           git pull origin master
           
-          # 3. 建立软连接 (关联数据仓库)
-          # -s: 软连接, -f: 强制(如果存在则覆盖), -n: 如果目标是目录，当作普通文件处理
+          # 3. 建立软连接 (保护数据不丢失)
+          # 确保你在服务器上已经创建了 /var/www/blog_data/posts 等目录
           ln -sfn /var/www/blog_data/posts ./public/posts
           ln -sfn /var/www/blog_data/uploads ./public/uploads
           ln -sf /var/www/blog_data/config.json ./public/config.json
           
+          # 4. 安装新依赖 (防止你加了新插件服务器报错)
+          # 使用 cnpm 或 npm 均可，腾讯云国内机器推荐用淘宝源
+          npm install --production --registry=https://registry.npmmirror.com
+
+          # 5. 重启服务 (关键步骤！)
+          # 假设你用 PM2 管理，如果没有运行过，这行命令会自动启动
+          # 如果已经运行，它会重载配置
+          pm2 reload youlai-blog || pm2 start server.js --name "youlai-blog"
+          
+          # 6. 保存 PM2 状态 (防止服务器重启后服务挂掉)
+          pm2 save
