@@ -141,6 +141,36 @@
 .sidebar-area {
     flex: 1;
     min-width: 250px;
+    position: -webkit-sticky; /* Safari */
+    position: sticky;
+    top: 130px; /* 顶部导航栏高度 + 间距 */
+    height: fit-content;
+    z-index: 100;
+}
+
+/* --- Post Reading Mode --- */
+/* 
+   2026-01-27 Update: 
+   Unify width with normal mode (About page / Home page).
+   Removed max-width restrictions to match the layout of About page.
+*/
+.container.post-reading-mode {
+    /* Keep default flex behavior (row), same as home page */
+    justify-content: flex-start; 
+}
+
+.container.post-reading-mode .sidebar-area {
+    /* Reset to default sidebar styles */
+    flex: 1;
+    min-width: 250px;
+    width: auto; 
+}
+
+.container.post-reading-mode .content-area {
+    /* Reset to default content styles */
+    flex: 3;
+    max-width: none; 
+    margin: 0;
 }
 
 /* --- Footer --- */

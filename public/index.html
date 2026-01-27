@@ -63,8 +63,14 @@
             </main>
         </div>
 
-        <aside class="sidebar-area">
-            <div class="widget-box">
+        <aside class="sidebar-area" id="main-sidebar">
+            <div class="widget-box" id="toc-widget" style="display: none;">
+                <div class="widget-title">目录</div>
+                <div id="toc-content" style="margin-top: 15px; max-height: 400px; overflow-y: auto;">
+                    <!-- TOC Content will be injected here -->
+                </div>
+            </div>
+            <div class="widget-box" id="webmaster-widget">
                 <div class="widget-title">站长</div>
                 <div class="profile-mini" style="margin-top: 15px;">
                     <img src="/img/head.jpg" alt="Avatar" onerror="this.src='https://placehold.co/60x60'">

@@ -13,6 +13,12 @@ const PORT = 3000;
 require('dotenv').config({ override: true });
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
+// Debug middleware
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url}`);
+    next();
+});
+
 // 初始化 R2 Client
 const r2Client = new S3Client({
     region: 'auto', // R2 必须填 auto
@@ -106,12 +112,23 @@ app.get('/config.json', (req, res) => {
 // 路由处理：如果是文件请求(有扩展名)交给 static，否则返回 post.html
 app.get('/posts/:id', (req, res, next) => {
     const id = req.params.id;
+    
+    // 优先处理 .md 文件请求 (修复 404 问题)
+    if (id.endsWith('.md')) {
+        const filePath = path.join(POSTS_DIR, id);
+        if (fs.existsSync(filePath)) {
+            return res.sendFile(filePath);
+        } else {
+            return res.status(404).send('Post not found');
+        }
+    }
+
     // 如果请求包含 . (例如 images/xxx.png)，则视为静态资源请求
     if (id.includes('.')) {
         return next();
     }
     
-    // 检查是否存在对应的 .md 文件
+    // 检查是否存在对应的 .md 文件 (用于无后缀访问，返回 post.html)
     const filePath = path.join(POSTS_DIR, `${id}.md`);
     if (fs.existsSync(filePath)) {
         // 返回查看器模板，前端会再请求内容
