@@ -9,6 +9,7 @@ const matter = require('gray-matter');
 const backupService = require('./backup_service');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
+const VISIT_FILE = path.join(__dirname, 'visits.json');
 const app = express();
 const PORT = 3000;
 require('dotenv').config({ override: true });
@@ -322,6 +323,26 @@ app.post('/api/ai-generate', async (req, res) => {
         console.error("Server Error:", error);
         res.status(500).json({ success: false, message: "AI CONNECTION FAILED" });
     }
+});
+
+// 路由: 获取并增加访问量
+app.get('/api/visit', (req, res) => {
+    fs.readFile(VISIT_FILE, 'utf8', (err, data) => {
+        let count = 0;
+        if (!err && data) {
+            try {
+                count = JSON.parse(data).count || 0;
+            } catch (e) {}
+        }
+        
+        count++;
+        
+        fs.writeFile(VISIT_FILE, JSON.stringify({ count }), (err) => {
+            if (err) console.error('Write visit file failed:', err);
+        });
+        
+        res.json({ count });
+    });
 });
 
 app.listen(PORT, () => {

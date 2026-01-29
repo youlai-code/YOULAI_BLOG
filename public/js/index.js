@@ -54,6 +54,9 @@ async function initApp() {
         // 初始状态：显示所有文章
         currentFilteredPosts = allPostsCache;
         renderPage(1);
+        
+        // 更新站点统计信息
+        updateSiteStats();
     } catch (err) {
         container.innerHTML = `
             <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red; transform:rotate(-2deg);">
@@ -62,6 +65,32 @@ async function initApp() {
                 <p>请确保已运行: node server.js</p>
             </div>
         `;
+    }
+}
+
+async function updateSiteStats() {
+    try {
+        // 1. 文章数量
+        const postCount = allPostsCache.length;
+        document.getElementById('stat-post-count').innerText = postCount;
+
+        // 2. 最近更新时间
+        let lastUpdate = 'N/A';
+        if (allPostsCache.length > 0) {
+            // 假设 date 格式为 YYYY-MM-DD
+            const sorted = [...allPostsCache].sort((a, b) => new Date(b.date) - new Date(a.date));
+            lastUpdate = sorted[0].date;
+        }
+        document.getElementById('stat-last-update').innerText = lastUpdate;
+
+        // 3. 访问量 (调用后端接口)
+        const res = await fetch('/api/visit');
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('stat-visit-count').innerText = data.count;
+        }
+    } catch (e) {
+        console.error('Update stats failed:', e);
     }
 }
 
