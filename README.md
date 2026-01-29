@@ -1,36 +1,50 @@
 # YOULAI NOTE | 又来的技术笔记
 
-一个致敬《女神异闻录5 皇家版》(Persona 5 Royal) 风格的个人技术博客系统
-![alt text](image.png)
-## 📖 项目简介
+[![Node.js](https://img.shields.io/badge/Node.js-v18%2B-43853d.svg?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-v5.0-000000.svg?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 
-这是一个基于 **Node.js + Express** 的全栈博客系统，采用《女神异闻录5》的视觉风格设计。
+> *"Take Your Heart"* —— 致敬《女神异闻录5 皇家版》(Persona 5 Royal) 风格的个人技术博客系统
 
-**核心特色：**
-- 🎨 **P5R 视觉风格** - 红黑黄配色、倾斜元素、棱角分明的设计
-- ✍️ **Markdown 编辑器** - 支持 Markdown 写作、代码高亮、数学公式
-- 🖼️ **图片管理** - 拖拽上传、自动清理未使用图片
-- 🎯 **响应式设计** - 桌面端和移动端完美适配
-- 🤖 **AI 辅助** - DeepSeek API 智能生成标题、摘要和标签
+🌐 **在线预览**：[https://youlainote.cn/](https://youlainote.cn/)
 
 ---
 
+![Project Screenshot](image.png)
+
+## 🎭 项目简介
+
+**YOULAI NOTE** 是一个极具视觉冲击力的全栈博客系统。它摒弃了传统的极简风，大胆采用了 P5R 的红黑配色与怪盗团美学，旨在为技术写作注入一份热血与个性。
+
+基于 **Node.js + Express** 构建，轻量高效，专注于内容创作与阅读体验。
+
+## ✨ 核心特色
+
+| 特性 | 说明 |
+| :--- | :--- |
+| 🎨 **P5R 视觉风格** | 深度复刻红黑黄配色、动态遮罩、倾斜UI与独特的字体排印 |
+| ✍️ **沉浸式写作** | 内置 Markdown 编辑器，支持实时预览、代码高亮与数学公式 |
+| 🤖 **AI 灵感辅助** | 集成 DeepSeek API，一键生成文章标题、摘要与智能标签 |
+| 📱 **全端适配** | 响应式布局，无论在桌面大屏还是移动端都能完美呈现 |
+| 🛡️ **纯粹技术栈** | 原生 JavaScript + CSS3 打造，无繁重框架依赖，极速加载 |
+
 ## 🛠️ 技术栈
 
-### 前端
-- **HTML5 / CSS3** - 模块化样式设计
-- **Vanilla JavaScript** - 无框架依赖
-- **Marked.js** - Markdown 渲染
-- **Prism.js** - 代码语法高亮
-- **MathJax** - 数学公式渲染
+### **Frontend**
+- **Core**: HTML5, CSS3, Vanilla JavaScript
+- **Rendering**: Marked.js (Markdown), Prism.js (Code), MathJax (Math)
+- **Design**: Custom P5R Theme System
 
-### 后端
-- **Node.js** - 运行环境
-- **Express** - Web 框架
-- **Multer** - 文件上传处理
-- **DeepSeek API** - AI 辅助写作
-- **dotenv** - 环境变量管理
+### **Backend**
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Storage**: Markdown Files (Flat File CMS)
+- **Cloud**: Cloudflare R2 (Image Storage)
+- **AI**: DeepSeek API
 
-### 数据存储
- - **Markdown + YAML Frontmatter** - 文章数据存储
- - **Cloudflare R2** - 图片云存储
+---
+
+<div align="center">
+  <p>Created with ❤️ by Youlai</p>
+  <p>© 2024 YOULAI_BLOG. All Rights Reserved.</p>
+</div>
