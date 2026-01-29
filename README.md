@@ -49,9 +49,7 @@
 ##  作者
 
 - **又来** (Youlai)
-- 🔗 GitHub: [@inkmark556](https://github.com/inkmark556)
 - 🎮 Bilibili: [65726055](https://space.bilibili.com/65726055)
-
 ---
 
 ## 📄 许可

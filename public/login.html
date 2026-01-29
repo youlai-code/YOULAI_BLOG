@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>又来笔记 | 管理员登录</title>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/model.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+        .login-box {
+            background: #222;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            text-align: center;
+            border: 1px solid #333;
+            width: 300px;
+            transform: rotate(-2deg);
+            transition: transform 0.3s;
+        }
+        .login-box:hover {
+            transform: rotate(0deg);
+            border-color: var(--p5-red);
+        }
+        h2 {
+            font-family: 'Bangers', cursive;
+            color: var(--p5-red);
+            font-size: 2rem;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background: #333;
+            border: none;
+            color: white;
+            border-bottom: 2px solid #555;
+            outline: none;
+            font-size: 1rem;
+        }
+        input:focus {
+            border-bottom-color: var(--p5-yellow);
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: var(--p5-red);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: 'Bangers';
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+            transform: skewX(-10deg);
+        }
+        button:hover {
+            background: white;
+            color: black;
+        }
+        .msg {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            min-height: 1.2em;
+        }
+        .success { color: var(--p5-green); }
+        .error { color: var(--p5-red); }
+    </style>
+    <!-- 引入 Bangers 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="login-box">
+    <h2>ADMIN ACCESS</h2>
+    <div id="login-form">
+        <input type="password" id="password" placeholder="Enter Password" onkeypress="handleEnter(event)">
+        <button onclick="login()">LOGIN</button>
+    </div>
+    <div id="logout-form" style="display: none;">
+        <p style="margin-bottom: 20px; color: #aaa;">Currently logged in</p>
+        <button onclick="logout()" style="background: #555;">LOGOUT</button>
+    </div>
+    <div id="message" class="msg"></div>
+</div>
+
+<script>
+    function handleEnter(e) {
+        if (e.key === 'Enter') login();
+    }
+
+    function checkLoginStatus() {
+        if (localStorage.getItem('YOULAI_ADMIN') === 'true') {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('logout-form').style.display = 'block';
+        } else {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('logout-form').style.display = 'none';
+        }
+    }
+
+    async function login() {
+        const pwd = document.getElementById('password').value;
+        const msg = document.getElementById('message');
+        
+        try {
+            const res = await fetch('config.json');
+            const config = await res.json();
+            
+            // 简单的前端验证
+            const correctPwd = config.features?.adminPassword || 'admin';
+            
+            if (pwd === correctPwd) {
+                msg.className = 'msg success';
+                msg.innerText = 'ACCESS GRANTED';
+                localStorage.setItem('YOULAI_ADMIN', 'true');
+                setTimeout(() => {
+                    location.href = '/'; // 跳转回首页
+                }, 1000);
+            } else {
+                msg.className = 'msg error';
+                msg.innerText = 'ACCESS DENIED';
+                localStorage.removeItem('YOULAI_ADMIN');
+            }
+        } catch (e) {
+            msg.innerText = 'System Error';
+            console.error(e);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('YOULAI_ADMIN');
+        document.getElementById('message').innerText = 'Logged out successfully';
+        document.getElementById('message').className = 'msg';
+        setTimeout(() => {
+            checkLoginStatus();
+            document.getElementById('message').innerText = '';
+        }, 1000);
+    }
+    
+    // 初始化检查
+    checkLoginStatus();
+</script>
+
+</body>
+</html>

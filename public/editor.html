@@ -16,6 +16,23 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script>
+        // 权限检查
+        fetch('config.json')
+             .then(res => res.json())
+             .then(config => {
+                 if (!config.features?.enableEditor && localStorage.getItem('YOULAI_ADMIN') !== 'true') {
+                     document.body.innerHTML = `
+                         <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#222; color:white; flex-direction:column;">
+                             <h1 style="font-family:'Bangers'; color:red; font-size:3rem;">ACCESS DENIED</h1>
+                             <p>编辑功能已关闭。</p>
+                             <a href="/" style="color:#f5e02e; margin-top:20px;">返回首页</a>
+                         </div>
+                     `;
+                 }
+             })
+            .catch(e => console.error(e));
+    </script>
 </head>
 
 <body>

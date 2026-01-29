@@ -35,5 +35,9 @@
     "footer": {
         "copyright": "© 2025 又来笔记.",
         "marquee": "欢迎访问又来笔记，这里记录了我的学习经历和各种技术分享。"
+    },
+    "features": {
+        "enableEditor": false,
+        "adminPassword": "123"
     }
 }

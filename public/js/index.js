@@ -31,6 +31,21 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
     const container = document.getElementById('blog-list-container');
+
+    // 0. 优先加载配置 (确定权限和UI)
+    try {
+        const cfgRes = await fetch('config.json');
+        if (cfgRes.ok) {
+            const config = await cfgRes.json();
+            // 设置权限
+            window.IS_ADMIN = config.features?.enableEditor === true || localStorage.getItem('YOULAI_ADMIN') === 'true';
+            // 应用配置到界面
+            applySiteConfig(config);
+        }
+    } catch (e) {
+        console.error("Config load failed:", e);
+    }
+
     try {
         const res = await fetch('posts.json');
         if (!res.ok) throw new Error("JSON NOT FOUND");
@@ -39,9 +54,6 @@ async function initApp() {
         // 初始状态：显示所有文章
         currentFilteredPosts = allPostsCache;
         renderPage(1);
-
-        // 加载社交媒体链接
-        loadSocialLinks();
     } catch (err) {
         container.innerHTML = `
             <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red; transform:rotate(-2deg);">
@@ -54,13 +66,14 @@ async function initApp() {
 }
 
 // 加载社交媒体链接和站点配置
-async function loadSocialLinks() {
+function applySiteConfig(config) {
     try {
-        const res = await fetch('config.json');
-        if (!res.ok) return; // 如果配置文件不存在，静默失败
+        // --- 0. 权限控制 UI ---
+        const btnAddBlog = document.getElementById('btn-add-blog');
+        if (btnAddBlog) {
+            btnAddBlog.style.display = window.IS_ADMIN ? 'inline-block' : 'none';
+        }
 
-        const config = await res.json();
-        
         // --- 1. 加载 Owner 信息 ---
         if (config.owner) {
             const avatarEl = document.getElementById('owner-avatar');

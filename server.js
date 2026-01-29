@@ -328,7 +328,9 @@ app.listen(PORT, () => {
     console.log('----------------------------------------------------------');
     console.log('   🃏 YOULAI NOTE | P5R 风格个人技术博客系统启动成功！');
     console.log('----------------------------------------------------------');
+    console.log(`   🚀 服务地址:      http://localhost:${PORT}`);
     console.log(`   📝 博客主页:      http://localhost:${PORT}/`);
+    console.log(`   🔐 后台登录:      http://localhost:${PORT}/login.html`);
     console.log('----------------------------------------------------------');
 
     // 初始化备份任务
