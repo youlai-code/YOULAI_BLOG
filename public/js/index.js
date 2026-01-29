@@ -77,8 +77,12 @@ async function updateSiteStats() {
         // 2. 最近更新时间
         let lastUpdate = 'N/A';
         if (allPostsCache.length > 0) {
-            // 假设 date 格式为 YYYY-MM-DD
-            const sorted = [...allPostsCache].sort((a, b) => new Date(b.date) - new Date(a.date));
+            // 兼容 YYYY.MM.DD 和 YYYY.MM.DD HH:mm 格式
+            const sorted = [...allPostsCache].sort((a, b) => {
+                const dateA = new Date(a.date.replace(/\./g, '-'));
+                const dateB = new Date(b.date.replace(/\./g, '-'));
+                return dateB - dateA;
+            });
             lastUpdate = sorted[0].date;
         }
         document.getElementById('stat-last-update').innerText = lastUpdate;

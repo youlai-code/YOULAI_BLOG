@@ -52,6 +52,7 @@ youlainote.cn_nginx/
 public/posts/
 public/uploads/
 backups/
+visits.json
 
 
 # 保留文件夹结构 (可选，防止报错)

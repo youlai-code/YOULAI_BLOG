@@ -7,7 +7,16 @@ let currentEditingId = null;
 
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
-    document.getElementById('in-date').value = new Date().toISOString().split('T')[0].replace(/-/g, '.');
+    // 初始化时间为 YYYY.MM.DD HH:mm
+    const now = new Date();
+    const formattedDate = now.getFullYear() + '.' + 
+        String(now.getMonth() + 1).padStart(2, '0') + '.' + 
+        String(now.getDate()).padStart(2, '0') + ' ' + 
+        String(now.getHours()).padStart(2, '0') + ':' + 
+        String(now.getMinutes()).padStart(2, '0');
+        
+    document.getElementById('in-date').value = formattedDate;
+    
     const params = new URLSearchParams(window.location.search);
     const editId = params.get('id');
     if (editId) {
@@ -105,6 +114,51 @@ previewPane.addEventListener('scroll', () => {
         setTimeout(() => isScrolling = false, 10);
     }
 });
+
+// 粘贴板图片上传支持
+input.addEventListener('paste', async (event) => {
+    const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+    for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file' && item.type.indexOf('image/') !== -1) {
+            const blob = item.getAsFile();
+            await uploadPastedImage(blob);
+            event.preventDefault(); // 阻止默认粘贴行为（防止粘贴二进制乱码）
+        }
+    }
+});
+
+async function uploadPastedImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    // 显示上传中提示
+    insertText('![上传中...](', ')');
+    
+    try {
+        const res = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            // 替换占位符为真实链接
+            const currentVal = input.value;
+            // 简单替换最后一次插入的占位符（注意：如果用户在上传期间快速输入可能会有偏差，这里做简化处理）
+            // 更严谨的做法是记录光标位置或使用唯一占位符 ID
+            input.value = currentVal.replace('![上传中...]()', `![image](${result.url})`);
+            input.dispatchEvent(new Event('input'));
+        } else {
+            alert('图片上传失败: ' + result.message);
+            input.value = input.value.replace('![上传中...]()', ''); // 清除占位符
+        }
+    } catch (err) {
+        console.error('Upload error:', err);
+        alert('上传出错');
+        input.value = input.value.replace('![上传中...]()', '');
+    }
+}
 
 // 快捷插入
 function insertText(before, after) {

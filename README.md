@@ -7,6 +7,7 @@
 *"Take Your Heart"* —— 致敬《女神异闻录5 皇家版》(Persona 5 Royal) 风格的个人技术博客系统
 
 🌐 **在线预览**：[https://youlainote.cn/](https://youlainote.cn/)
+🌐 **开源地址**：[https://github.com/youlai-code/YOULAI_BLOG](https://github.com/youlai-code/YOULAI_BLOG)
 
 本项目完全开源，欢迎自由使用与魔改。目前系统正处于敏捷迭代期，并非最终形态，部署门槛可能略高。详细的部署指南将在正式版发布时同步奉上，感谢您的关注与耐心！
 
