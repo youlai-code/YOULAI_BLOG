@@ -1,16 +1,7 @@
 # YOULAI NOTE | 又来的技术笔记
 
-<div align="center">
-
-## **Welcome to the Metaverse of Code!**
-
 一个致敬《女神异闻录5 皇家版》(Persona 5 Royal) 风格的个人技术博客系统
-</div>
-
-![P5R Style](https://img.shields.io/badge/Style-Persona%205%20Royal-D20505?style=for-the-badge)![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=for-the-badge&logo=node.js)![License](https://img.shields.io/badge/License-Personal-fce100?style=for-the-badge)
-
----
-
+![alt text](image.png)
 ## 📖 项目简介
 
 这是一个基于 **Node.js + Express** 的全栈博客系统，采用《女神异闻录5》的视觉风格设计。
@@ -43,15 +34,3 @@
 ### 数据存储
  - **Markdown + YAML Frontmatter** - 文章数据存储
  - **Cloudflare R2** - 图片云存储
-
----
-
-##  作者
-
-- **又来** (Youlai)
-- 🎮 Bilibili: [65726055](https://space.bilibili.com/65726055)
----
-
-## 📄 许可
-
-仅供个人学习和使用，禁止商业用途。
