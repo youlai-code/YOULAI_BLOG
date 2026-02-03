@@ -559,17 +559,13 @@ function exitPostMode() {
     const tocWidget = document.getElementById('toc-widget');
     const webmasterWidget = document.getElementById('webmaster-widget');
     const containerDiv = document.querySelector('.container');
+    const backBtnWidget = document.getElementById('back-btn-widget');
     
     if (tocWidget) {
         tocWidget.style.display = 'none';
-        // 还原标题样式，避免污染
-        const titleEl = tocWidget.querySelector('.widget-title');
-        if (titleEl) {
-            titleEl.innerHTML = '目录';
-            titleEl.style.display = '';
-            titleEl.style.justifyContent = '';
-            titleEl.style.alignItems = '';
-        }
+    }
+    if (backBtnWidget) {
+        backBtnWidget.style.display = 'none';
     }
     if (webmasterWidget) webmasterWidget.style.display = 'block';
     if (containerDiv) containerDiv.classList.remove('post-reading-mode');
@@ -629,20 +625,25 @@ async function showPost(postId) {
         });
 
         // 生成 TOC HTML
-        let tocHtml = '<ul style="list-style:none; padding-left:0;">';
-        tocList.forEach(item => {
-            // 简单缩进
-            const padding = (item.depth - 1) * 15;
-            tocHtml += `<li style="margin-bottom:8px; padding-left:${padding}px;">
-                <a href="#${item.id}" onclick="setTimeout(() => document.getElementById('${item.id}').scrollIntoView({behavior: 'smooth'}), 100); return false;" 
-                   style="color:var(--p5-white); text-decoration:none; font-size:0.9rem; transition:color 0.2s;"
-                   onmouseover="this.style.color='var(--p5-yellow)'" 
-                   onmouseout="this.style.color='var(--p5-white)'">
-                   ${item.text}
-                </a>
-            </li>`;
-        });
-        tocHtml += '</ul>';
+        let tocHtml = '';
+        if (tocList.length > 0) {
+            tocHtml = '<ul style="list-style:none; padding-left:0;">';
+            tocList.forEach(item => {
+                // 简单缩进
+                const padding = (item.depth - 1) * 15;
+                tocHtml += `<li style="margin-bottom:8px; padding-left:${padding}px;">
+                    <a href="#${item.id}" onclick="setTimeout(() => document.getElementById('${item.id}').scrollIntoView({behavior: 'smooth'}), 100); return false;" 
+                       style="color:var(--p5-white); text-decoration:none; font-size:0.9rem; transition:color 0.2s;"
+                       onmouseover="this.style.color='var(--p5-yellow)'" 
+                       onmouseout="this.style.color='var(--p5-white)'">
+                       ${item.text}
+                    </a>
+                </li>`;
+            });
+            tocHtml += '</ul>';
+        } else {
+            tocHtml = '<div style="color:#aaa; text-align:center; padding:20px; font-size:0.9rem;">该文章没有目录</div>';
+        }
 
         // 注入 TOC 到侧边栏
         const tocWidget = document.getElementById('toc-widget');
@@ -650,34 +651,16 @@ async function showPost(postId) {
         const webmasterWidget = document.getElementById('webmaster-widget');
         const sidebar = document.getElementById('main-sidebar');
         const containerDiv = document.querySelector('.container');
+        const backBtnWidget = document.getElementById('back-btn-widget');
 
         if (tocWidget && tocContent) {
             tocContent.innerHTML = tocHtml;
             tocWidget.style.display = 'block';
+            if (backBtnWidget) backBtnWidget.style.display = 'block';
             if (webmasterWidget) webmasterWidget.style.display = 'none';
             
             // 调整布局类名
             containerDiv.classList.add('post-reading-mode');
-
-            // --- 注入返回按钮到 Widget Title ---
-            const titleEl = tocWidget.querySelector('.widget-title');
-            if (titleEl) {
-                titleEl.style.display = 'flex';
-                titleEl.style.justifyContent = 'space-between';
-                titleEl.style.alignItems = 'center';
-                
-                titleEl.innerHTML = `
-                    <span>目录</span>
-                    <button onclick="exitPostMode(); renderPage(currentPage);" 
-                        style="background:transparent; color:white; border:1px solid white; 
-                               padding:2px 8px; cursor:pointer; font-family:'Bangers'; font-size:0.8rem;
-                               transition: all 0.2s;"
-                        onmouseover="this.style.background='var(--p5-red)'; this.style.borderColor='var(--p5-red)';"
-                        onmouseout="this.style.background='transparent'; this.style.borderColor='white';">
-                        <i class="fas fa-undo"></i> BACK
-                    </button>
-                `;
-            }
         }
 
         // 1. 解析 MD -> HTML

@@ -98,13 +98,22 @@
 .action-mini-btn {
     font-family: 'Bangers';
     font-size: 0.9rem;
-    padding: 4px 12px;
-    border: 2px solid var(--p5-black);
+    padding: 5px 10px;
     cursor: pointer;
-    transform: skewX(-10deg);
-    transition: 0.2s;
-    text-decoration: none;
-    display: inline-block;
+    border: 2px solid black;
+    box-shadow: 2px 2px 0 black;
+    transition: all 0.1s;
+    text-transform: uppercase;
+}
+
+.action-mini-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 black;
+}
+
+.action-mini-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 black;
 }
 
 .btn-edit {
@@ -112,77 +121,50 @@
     color: black;
 }
 
-.btn-edit:hover {
-    background: white;
-    transform: skewX(-10deg) scale(1.1);
-}
-
 .btn-del {
-    background: var(--p5-black);
-    color: white;
-    border-color: white;
-}
-
-.btn-del:hover {
     background: var(--p5-red);
-    transform: skewX(-10deg) scale(1.1);
+    color: white;
 }
 
-/* --- 社交媒体链接 --- */
+/* --- 社交链接 --- */
 .social-links {
     display: flex;
-    justify-content: center;
     gap: 15px;
     margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px dashed #666;
 }
 
 .social-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: var(--p5-black);
     color: var(--p5-white);
+    font-size: 1.2rem;
+    transition: color 0.2s;
     text-decoration: none;
-    font-size: 1.3rem;
-    transition: all 0.3s;
-    border: 2px solid var(--p5-white);
-    position: relative;
 }
 
 .social-link:hover {
-    background: var(--p5-red);
     color: var(--p5-yellow);
-    transform: scale(1.15) rotate(5deg);
-    border-color: var(--p5-yellow);
-    box-shadow: 0 5px 15px rgba(252, 225, 0, 0.4);
 }
 
-.social-link i {
-    transition: transform 0.3s;
-}
-
-.social-link:hover i {
-    transform: scale(1.1);
-}
-
-/* --- 邮箱显示 --- */
 .email-box {
-    margin-top: 15px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px dashed #666;
-    color: #aaa;
+    margin-top: 10px;
     font-size: 0.9rem;
-    text-align: center;
-    word-break: break-all;
-    font-family: 'Consolas', monospace;
+    color: #aaa;
 }
 
-.email-box i {
-    color: var(--p5-yellow);
-    margin-right: 5px;
+/* --- 自定义滚动条 (针对 TOC) --- */
+#toc-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+#toc-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+#toc-content::-webkit-scrollbar-thumb {
+    background: var(--p5-red);
+    border-radius: 3px;
+}
+
+#toc-content::-webkit-scrollbar-thumb:hover {
+    background: var(--p5-yellow);
 }
