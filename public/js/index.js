@@ -6,6 +6,26 @@ let currentFilteredPosts = []; // 当前筛选后的所有文章
 let currentPage = 1;
 const ITEMS_PER_PAGE = 6; // 每页显示几篇文章
 
+function getPostUrl(postId) {
+    const base = window.SITE_CONFIG?.seo?.postSubdomainBase;
+    if (base && typeof base === 'string' && base.trim()) {
+        const host = base.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+        return `${window.location.protocol}//${postId}.${host}/`;
+    }
+    return `/posts/${postId}`;
+}
+
+function goToPost(postId, hash) {
+    const url = getPostUrl(postId);
+    window.location.href = hash ? `${url}${hash}` : url;
+}
+
+function setHomeTopVisible(visible) {
+    const el = document.getElementById('home-top');
+    if (!el) return;
+    el.style.display = visible ? '' : 'none';
+}
+
 // 配置 Marked 全局渲染器 (修复标题 ID 和样式问题)
 if (window.marked) {
     marked.use({
@@ -38,7 +58,8 @@ async function initApp() {
         if (cfgRes.ok) {
             const config = await cfgRes.json();
             // 设置权限
-            window.IS_ADMIN = config.features?.enableEditor === true || localStorage.getItem('YOULAI_ADMIN') === 'true';
+            window.IS_ADMIN = config.features?.enableEditor === true || localStorage.getItem('YOULAI_ADMIN') === 'true' || Boolean(localStorage.getItem('YOULAI_ADMIN_TOKEN'));
+            window.SITE_CONFIG = config;
             // 应用配置到界面
             applySiteConfig(config);
         }
@@ -53,11 +74,20 @@ async function initApp() {
 
         // 初始状态：显示所有文章
         currentFilteredPosts = allPostsCache;
+        setHomeTopVisible(true);
         renderPage(1);
         
         // 更新站点统计信息
         updateSiteStats();
+
+        // 检查 URL 参数，如果有 id 则加载文章
+        const params = new URLSearchParams(window.location.search);
+        const postId = params.get('id');
+        if (postId) {
+            await showPost(postId, false); // false 表示不重复 pushState
+        }
     } catch (err) {
+        setHomeTopVisible(true);
         container.innerHTML = `
             <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red; transform:rotate(-2deg);">
                 <h2 style="font-family:'Bangers'; color:red;">连接错误</h2>
@@ -102,10 +132,11 @@ async function updateSiteStats() {
 function applySiteConfig(config) {
     try {
         // --- 0. 权限控制 UI ---
-        const btnAddBlog = document.getElementById('btn-add-blog');
-        if (btnAddBlog) {
-            btnAddBlog.style.display = window.IS_ADMIN ? 'inline-block' : 'none';
-        }
+        const btnWrite = document.getElementById('btn-write');
+        if (btnWrite) btnWrite.style.display = window.IS_ADMIN ? 'inline-block' : 'none';
+
+        const btnAdmin = document.getElementById('btn-admin');
+        if (btnAdmin) btnAdmin.style.display = window.IS_ADMIN ? 'inline-block' : 'none';
 
         // --- 1. 加载 Owner 信息 ---
         if (config.owner) {
@@ -180,7 +211,7 @@ function applySiteConfig(config) {
 }
 
 
-// 2. 核心：渲染所有文章（已移除分页）
+// 2. 核心：渲染文章（分页）
 function renderPage(page) {
     const container = document.getElementById('blog-list-container');
 
@@ -191,54 +222,84 @@ function renderPage(page) {
         return;
     }
 
-    // 渲染所有文章
+    const totalPages = Math.max(1, Math.ceil(currentFilteredPosts.length / ITEMS_PER_PAGE));
+    currentPage = Math.min(Math.max(1, page), totalPages);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const pagedPosts = currentFilteredPosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    // 渲染当前页文章
     container.style.opacity = 0;
-    currentFilteredPosts.forEach(post => {
+    pagedPosts.forEach(post => {
         let tagsDisplay = Array.isArray(post.tags) ? post.tags.join(' / ') : post.tags;
 
-        let adminActions = '';
-        if (window.IS_ADMIN) {
-            adminActions = `
+        const actionsHtml = `
             <div class="card-actions">
-                <button class="action-mini-btn btn-edit" 
-                    onclick="event.stopPropagation(); location.href='editor.html?id=${post.id}'">
-                    EDIT
-                </button>
-                <button class="action-mini-btn btn-del" 
-                    onclick="event.stopPropagation(); deletePost('${post.id}')">
-                    DELETE
+                <button class="action-mini-btn btn-comment" onclick="event.stopPropagation(); goToPost('${post.id}', '#post-comments')">
+                    COMMENT
                 </button>
             </div>`;
-        }
 
         const html = `
     <article class="post-entry">
-        <div class="post-link-overlay" onclick="showPost('${post.id}')" title="${post.title}"></div>
+        <div class="post-link-overlay" onclick="goToPost('${post.id}')" title="${post.title}"></div>
         ${post.cover ? `<div class="post-cover" style="background-image: url('${post.cover}');"></div>` : ''}
         <div class="post-content-wrap">
             <div class="post-meta">${post.date} <span class="post-tag">${tagsDisplay}</span></div>
             <h2 class="post-title">${post.title}</h2>
             <p class="post-summary">${post.summary}</p>
         </div>
-        ${adminActions}
+        ${actionsHtml}
     </article>
 `;
         container.innerHTML += html;
     });
 
+    // 分页控件
+    if (totalPages > 1) {
+        const pagination = document.createElement('div');
+        pagination.className = 'pagination-bar';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn';
+        prevBtn.innerText = 'PREV';
+        prevBtn.disabled = currentPage <= 1;
+        prevBtn.onclick = () => changePage(-1);
+
+        const info = document.createElement('div');
+        info.className = 'page-info';
+        info.innerText = `${currentPage} / ${totalPages}`;
+
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn';
+        nextBtn.innerText = 'NEXT';
+        nextBtn.disabled = currentPage >= totalPages;
+        nextBtn.onclick = () => changePage(1);
+
+        pagination.appendChild(prevBtn);
+        pagination.appendChild(info);
+        pagination.appendChild(nextBtn);
+        container.appendChild(pagination);
+    }
+
     // 淡入动画
     setTimeout(() => { container.style.opacity = 1; }, 50);
 }
 
-// 3. 翻页功能（已移除，保留函数避免错误）
+// 3. 翻页功能
 function changePage(direction) {
-    // 不再需要翻页
+    const totalPages = Math.max(1, Math.ceil(currentFilteredPosts.length / ITEMS_PER_PAGE));
+    const nextPage = Math.min(Math.max(1, currentPage + direction), totalPages);
+    if (nextPage === currentPage) return;
+    renderPage(nextPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // 4. 筛选功能
 function filterPosts(category) {
     // 退出文章模式（如果在）
     exitPostMode();
+
+    setHomeTopVisible(category === 'HOME');
 
     // 按钮高亮逻辑
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
@@ -266,10 +327,12 @@ function searchPosts(keyword) {
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
     if (!keyword || keyword.trim() === '') {
+        setHomeTopVisible(true);
         // 如果搜索为空，恢复到 HOME 状态
         document.getElementById('btn-home').classList.add('active');
         currentFilteredPosts = allPostsCache;
     } else {
+        setHomeTopVisible(false);
         const lowerKeyword = keyword.toLowerCase().trim();
         currentFilteredPosts = allPostsCache.filter(post => {
             const titleMatch = post.title.toLowerCase().includes(lowerKeyword);
@@ -289,6 +352,8 @@ function searchPosts(keyword) {
 function showDiscoveryPage() {
     // 退出文章模式
     exitPostMode();
+
+    setHomeTopVisible(false);
 
     // 1. 按钮高亮
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
@@ -418,6 +483,8 @@ function showDiscoveryPage() {
 async function showAboutPage() {
     // 退出文章模式（确保目录隐藏等）
     exitPostMode();
+
+    setHomeTopVisible(false);
 
     // 1. 按钮高亮
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
@@ -569,14 +636,34 @@ function exitPostMode() {
     }
     if (webmasterWidget) webmasterWidget.style.display = 'block';
     if (containerDiv) containerDiv.classList.remove('post-reading-mode');
+
+    setHomeTopVisible(true);
+
+    // 恢复 URL 到首页 (如果没有 id 就不 push 了，防止重复)
+    if (window.location.search) {
+        window.history.pushState({}, '', window.location.pathname);
+    }
 }
 
+// 监听浏览器后退/前进
+window.addEventListener('popstate', (event) => {
+    const params = new URLSearchParams(window.location.search);
+    const postId = params.get('id');
+    if (postId) {
+        showPost(postId, false);
+    } else {
+        exitPostMode();
+        renderPage(currentPage);
+    }
+});
+
 // 8. SPA 文章阅读：动态加载
-async function showPost(postId) {
+async function showPost(postId, updateHistory = true) {
     // 1. 取消所有分类按钮的高亮（可选，或者保留当前高亮）
     // document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
 
     const container = document.getElementById('blog-list-container');
+    setHomeTopVisible(false);
     container.style.opacity = 0;
     container.innerHTML = `<h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">LOADING DATA...</h2>`;
 
@@ -666,11 +753,38 @@ async function showPost(postId) {
         // 1. 解析 MD -> HTML
         const htmlContent = marked.parse(text);
 
-        // 2. 渲染 (去除原来的返回按钮)
+        // 2. 渲染
         container.innerHTML = `
             <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
                 <h1 style="border-bottom:3px solid black; padding-bottom:10px; margin-bottom:20px;">${title}</h1>
                 <div style="color:#666; margin-bottom:30px; font-weight:bold;">${date}</div>
+                <div id="post-comments" style="margin-bottom: 26px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                        <div style="font-family:'Bangers'; font-size:1.6rem;">文章留言</div>
+                        <a class="p5-link-btn" href="/message-board">网站留言板</a>
+                    </div>
+                    <div class="comment-form" style="margin-top:14px;">
+                        <div class="comment-form-row">
+                            <div class="comment-field">
+                                <div class="comment-label">昵称</div>
+                                <input id="post-comment-name" placeholder="匿名访客" class="comment-input">
+                            </div>
+                        </div>
+                        <div class="comment-field" style="margin-top: 14px;">
+                            <div class="comment-label">联系方式（可选）</div>
+                            <input id="post-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input">
+                        </div>
+                        <div class="comment-field" style="margin-top: 14px;">
+                            <div class="comment-label">留言内容</div>
+                            <textarea id="post-comment-content" rows="4" placeholder="写下你的想法..." class="comment-textarea"></textarea>
+                        </div>
+                        <div class="comment-actions" style="margin-top: 14px;">
+                            <button id="post-comment-submit" class="p5-link-btn" type="button">提交</button>
+                            <div id="post-comment-status" class="comment-status"></div>
+                        </div>
+                    </div>
+                    <div id="post-comments-list" class="comment-list" style="margin-top: 16px;"></div>
+                </div>
                 ${htmlContent}
             </div>
         `;
@@ -695,6 +809,8 @@ async function showPost(postId) {
         // 淡入动画
         setTimeout(() => { container.style.opacity = 1; }, 50);
 
+        initPostComments(postId);
+
     } catch (err) {
         console.error(err);
         container.innerHTML = `
@@ -706,4 +822,129 @@ async function showPost(postId) {
         `;
         container.style.opacity = 1;
     }
+}
+
+function formatDateTime(iso) {
+    try {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${y}-${m}-${day} ${hh}:${mm}`;
+    } catch {
+        return '';
+    }
+}
+
+function buildCommentCard(comment) {
+    const card = document.createElement('div');
+    card.className = 'comment-card';
+
+    const head = document.createElement('div');
+    head.className = 'comment-head';
+
+    const name = document.createElement('div');
+    name.className = 'comment-name';
+    name.textContent = comment?.name || '匿名访客';
+
+    const time = document.createElement('div');
+    time.className = 'comment-time';
+    time.textContent = formatDateTime(comment?.createdAt);
+
+    head.appendChild(name);
+    head.appendChild(time);
+
+    const body = document.createElement('div');
+    body.className = 'comment-body';
+    body.textContent = comment?.content || '';
+
+    card.appendChild(head);
+    card.appendChild(body);
+    return card;
+}
+
+async function loadPostComments(postId) {
+    const listEl = document.getElementById('post-comments-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const placeholder = document.createElement('div');
+    placeholder.className = 'comment-empty';
+    placeholder.textContent = '加载中...';
+    listEl.appendChild(placeholder);
+
+    try {
+        const res = await fetch(`/api/comments/post/${encodeURIComponent(postId)}`);
+        const data = await res.json();
+        listEl.innerHTML = '';
+        if (!data?.success) throw new Error(data?.message || 'FAILED');
+
+        const comments = Array.isArray(data.comments) ? data.comments : [];
+        if (comments.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'comment-empty';
+            empty.textContent = '还没有留言，来当第一个吧。';
+            listEl.appendChild(empty);
+            return;
+        }
+
+        comments.forEach(c => listEl.appendChild(buildCommentCard(c)));
+    } catch (e) {
+        listEl.innerHTML = '';
+        const err = document.createElement('div');
+        err.className = 'comment-empty';
+        err.textContent = '加载失败，请稍后重试。';
+        listEl.appendChild(err);
+    }
+}
+
+async function submitPostComment(postId) {
+    const nameEl = document.getElementById('post-comment-name');
+    const contactEl = document.getElementById('post-comment-contact');
+    const contentEl = document.getElementById('post-comment-content');
+    const btn = document.getElementById('post-comment-submit');
+    const statusEl = document.getElementById('post-comment-status');
+
+    if (!contentEl || !btn) return;
+    const name = (nameEl?.value || '').trim();
+    const contact = (contactEl?.value || '').trim();
+    const content = (contentEl.value || '').trim();
+    if (!content) {
+        if (statusEl) statusEl.textContent = '请填写留言内容。';
+        return;
+    }
+
+    btn.disabled = true;
+    if (statusEl) statusEl.textContent = '提交中...';
+    try {
+        const res = await fetch(`/api/comments/post/${encodeURIComponent(postId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, contact, content })
+        });
+        const data = await res.json();
+        if (!res.ok || !data?.success) throw new Error(data?.message || 'FAILED');
+
+        contentEl.value = '';
+        if (statusEl) statusEl.textContent = '已提交，等待审核。';
+        await loadPostComments(postId);
+    } catch (e) {
+        if (statusEl) statusEl.textContent = '提交失败，请稍后重试。';
+    } finally {
+        btn.disabled = false;
+        setTimeout(() => {
+            if (statusEl) statusEl.textContent = '';
+        }, 2000);
+    }
+}
+
+function initPostComments(postId) {
+    const btn = document.getElementById('post-comment-submit');
+    if (btn) {
+        btn.onclick = () => submitPostComment(postId);
+    }
+    loadPostComments(postId);
 }

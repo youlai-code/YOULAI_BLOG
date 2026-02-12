@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>又来博客</title>
+    <title>又来笔记 - 独立开发者技术博客 | Unity3D | C# | Web开发</title>
+    <meta name="description" content="又来笔记是一个专注于Unity3D、C#、Web全栈开发的个人技术博客。分享游戏开发经验、编程技巧和独立开发者的心路历程。代码即世界，记录学习与成长的点滴。">
+    <meta name="keywords" content="又来笔记,Unity3D,C#,Web开发,独立开发者,技术博客,编程教程,游戏开发">
+    <meta name="author" content="又来">
     <link rel="icon" type="image/jpeg" href="/img/icon.png">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/background.css">
@@ -43,6 +46,8 @@
         <a href="#" class="brand-logo" onclick="filterPosts('HOME'); return false;">YOULAI NOTE</a>
         <div class="menu-list">
             <a href="#" id="btn-home" class="menu-btn active" onclick="filterPosts('HOME'); return false;">首页</a>
+            <a href="/columns" id="btn-columns" class="menu-btn">专栏</a>
+            <a href="/message-board" id="btn-message-board" class="menu-btn">留言板</a>
             <a href="#" id="btn-discovery" class="menu-btn" onclick="showDiscoveryPage(); return false;">发现</a>
             <a href="#" id="btn-about" class="menu-btn" onclick="showAboutPage(); return false;">关于</a>
             <div class="search-box">
@@ -50,17 +55,23 @@
                 <i class="fas fa-search search-icon"></i>
             </div>
 
-            <a href="editor.html" id="btn-add-blog" class="menu-btn"
-                style="background:var(--p5-red); color:white; margin-left:20px;">
-                + ADD BOLG
+            <a href="/editor.html" id="btn-write" class="menu-btn"
+                style="background:var(--p5-red); color:white; margin-left:20px; display:none;">
+                + WRITE
+            </a>
+            <a href="/admin.html" id="btn-admin" class="menu-btn"
+                style="background:var(--p5-black); color:var(--p5-yellow); margin-left:10px; display:none;">
+                ADMIN
             </a>
         </div>
     </nav>
 
     <div class="container">
         <div style="flex:3; display:flex; flex-direction:column;">
-            <main class="content-area" id="blog-list-container">
-                <h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">初始化中...</h2>
+            <main class="content-area">
+                <div id="blog-list-container">
+                    <h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">初始化中...</h2>
+                </div>
             </main>
         </div>
 
@@ -119,6 +130,8 @@
                     <i class="fas fa-envelope"></i> <span id="email-text"></span>
                 </div>
             </div>
+
+
             <div class="widget-box">
                 <div class="widget-title">分类</div>
                 <div class="tag-cloud" style="margin-top: 15px;">

@@ -21,7 +21,7 @@
         fetch('config.json')
              .then(res => res.json())
              .then(config => {
-                 if (!config.features?.enableEditor && localStorage.getItem('YOULAI_ADMIN') !== 'true') {
+                 if (!config.features?.enableEditor && localStorage.getItem('YOULAI_ADMIN') !== 'true' && !localStorage.getItem('YOULAI_ADMIN_TOKEN')) {
                      document.body.innerHTML = `
                          <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#222; color:white; flex-direction:column;">
                              <h1 style="font-family:'Bangers'; color:red; font-size:3rem;">ACCESS DENIED</h1>
@@ -56,6 +56,12 @@
                     <input type="text" id="in-title" class="p5-input title-input" placeholder="文章标题">
                     <input type="text" id="in-date" class="p5-input small-input" placeholder="日期">
                     <input type="text" id="in-tags" class="p5-input small-input" placeholder="标签">
+                    <select id="in-column" class="p5-input small-input" style="min-width: 140px;">
+                        <option value="">未加入专栏</option>
+                    </select>
+                    <button onclick="location.href='/columns-admin.html'" class="action-btn" title="管理专栏" style="background:#444;">
+                        <i class="fas fa-layer-group"></i> 专栏
+                    </button>
                     <button onclick="aiAutoFill()" class="action-btn btn-ai" title="AI 自动生成信息">
                         <i class="fas fa-bolt"></i> AI 生成
                     </button>

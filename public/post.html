@@ -4,9 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>加载中... | 又来笔记</title>
+    <title>__POST_TITLE__ | 又来笔记</title>
+
+    <meta name="description" content="__POST_DESC__">
+    <meta property="og:title" content="__POST_TITLE__ | 又来笔记">
+    <meta property="og:description" content="__POST_DESC__">
+    <meta property="og:type" content="article">
+    <link rel="canonical" href="__POST_CANONICAL__">
+
+    <script>
+        window.__POST_ID__ = __POST_ID_JSON__;
+    </script>
 
     <link rel="stylesheet" href="/css/markdown.css">
+    <link rel="stylesheet" href="/css/components.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+SC:wght@400;700;900&display=swap');
     </style>
@@ -186,6 +197,41 @@
             border-top: 5px solid var(--p5-black);
         }
 
+        .post-entry-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 24px 0;
+        }
+
+        .post-comment-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            font-family: 'Bangers';
+            font-size: 1.2rem;
+            border: 3px solid black;
+            box-shadow: 4px 4px 0 black;
+            background: var(--p5-yellow);
+            color: black;
+            text-decoration: none;
+            transform: skewX(-10deg);
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+
+        .post-comment-btn:hover {
+            background: var(--p5-red);
+            color: white;
+            transform: skewX(-10deg) translate(-2px, -2px);
+            box-shadow: 6px 6px 0 black;
+        }
+
+        .post-comment-hint {
+            color: #666;
+            font-weight: bold;
+        }
+
         @media (max-width: 1024px) {
             .layout-container {
                 flex-direction: column;
@@ -238,6 +284,31 @@
 
         <main class="article-main">
             <div id="content-render-area" class="markdown-body"></div>
+            <section id="post-comments" style="margin-top: 40px; display:none;">
+                <h2 style="margin: 0 0 12px;">文章留言</h2>
+                <div class="comment-form">
+                    <div class="comment-form-row">
+                        <div class="comment-field">
+                            <div class="comment-label">昵称</div>
+                            <input id="post-comment-name" placeholder="匿名访客" class="comment-input">
+                        </div>
+                    </div>
+                    <div class="comment-field" style="margin-top: 14px;">
+                        <div class="comment-label">联系方式（可选）</div>
+                        <input id="post-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input">
+                    </div>
+                    <div class="comment-field" style="margin-top: 14px;">
+                        <div class="comment-label">留言内容</div>
+                        <textarea id="post-comment-content" rows="5" placeholder="写下你的想法..." class="comment-textarea"></textarea>
+                    </div>
+                    <div class="comment-actions" style="margin-top: 14px;">
+                        <button id="post-comment-submit" class="post-comment-btn" type="button">提交</button>
+                        <a class="post-comment-btn" href="/message-board" style="background: var(--p5-white);">网站留言板</a>
+                        <div id="post-comment-status" class="comment-status"></div>
+                    </div>
+                </div>
+                <div id="post-comments-list" class="comment-list" style="margin-top: 18px;"></div>
+            </section>
         </main>
     </div>
 
@@ -256,14 +327,17 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Modified to support /posts/:id path
             let postId;
+            if (window.__POST_ID__) {
+                postId = window.__POST_ID__;
+            }
             const pathParts = window.location.pathname.split('/');
             // Check if last part is ID (e.g. /posts/123)
-            if (pathParts.length > 0 && pathParts[pathParts.length - 1] !== '') {
+            if (!postId && pathParts.length > 0 && pathParts[pathParts.length - 1] !== '') {
                 postId = pathParts[pathParts.length - 1];
             } else {
                 // Fallback to query param if any
                 const params = new URLSearchParams(window.location.search);
-                postId = params.get('id');
+                postId = postId || params.get('id');
             }
 
             const loadingScreen = document.getElementById('loading-screen');
@@ -312,10 +386,16 @@
                     // 1. 解析 MD -> HTML
                     renderArea.innerHTML = marked.parse(text);
 
-                    // 设置标题 (优先使用 Frontmatter 标题)
+                    // 设置标题/描述 (优先使用 Frontmatter)
                     const h1 = renderArea.querySelector('h1');
                     const pageTitle = metadata.title || (h1 ? h1.innerText : 'Untitled');
                     document.title = pageTitle + " | 又来笔记";
+
+                    const metaDesc = document.querySelector('meta[name="description"]');
+                    const descText = (metadata.summary || metadata.description || '').toString().trim();
+                    if (metaDesc) {
+                        metaDesc.setAttribute('content', descText || pageTitle);
+                    }
                     
                     // 如果 Frontmatter 有标题且正文没 H1，可以考虑手动插入标题 (可选)
                     // if (metadata.title && !h1) {
@@ -353,6 +433,8 @@
                     loadingScreen.style.opacity = '0';
                     setTimeout(() => loadingScreen.remove(), 500);
                     contentArea.style.opacity = '1';
+
+                    initPostComments(postId);
                 })
                 .catch(err => {
                     showError(err.message);
@@ -409,6 +491,131 @@
                     });
                 }, { rootMargin: '-100px 0px -70% 0px' });
                 headers.forEach(h => observer.observe(h));
+            }
+
+            function formatDateTime(iso) {
+                try {
+                    const d = new Date(iso);
+                    if (Number.isNaN(d.getTime())) return '';
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const hh = String(d.getHours()).padStart(2, '0');
+                    const mm = String(d.getMinutes()).padStart(2, '0');
+                    return `${y}-${m}-${day} ${hh}:${mm}`;
+                } catch {
+                    return '';
+                }
+            }
+
+            function buildCommentCard(comment) {
+                const card = document.createElement('div');
+                card.className = 'comment-card';
+
+                const head = document.createElement('div');
+                head.className = 'comment-head';
+
+                const name = document.createElement('div');
+                name.className = 'comment-name';
+                name.textContent = comment?.name || '匿名访客';
+
+                const time = document.createElement('div');
+                time.className = 'comment-time';
+                time.textContent = formatDateTime(comment?.createdAt);
+
+                head.appendChild(name);
+                head.appendChild(time);
+
+                const body = document.createElement('div');
+                body.className = 'comment-body';
+                body.textContent = comment?.content || '';
+
+                card.appendChild(head);
+                card.appendChild(body);
+                return card;
+            }
+
+            async function loadPostComments(pid) {
+                const listEl = document.getElementById('post-comments-list');
+                if (!listEl) return;
+                listEl.innerHTML = '';
+
+                const placeholder = document.createElement('div');
+                placeholder.className = 'comment-empty';
+                placeholder.textContent = '加载中...';
+                listEl.appendChild(placeholder);
+
+                try {
+                    const res = await fetch(`/api/comments/post/${encodeURIComponent(pid)}`);
+                    const data = await res.json();
+                    listEl.innerHTML = '';
+                    if (!data?.success) throw new Error(data?.message || 'FAILED');
+
+                    const comments = Array.isArray(data.comments) ? data.comments : [];
+                    if (comments.length === 0) {
+                        const empty = document.createElement('div');
+                        empty.className = 'comment-empty';
+                        empty.textContent = '还没有留言，来当第一个吧。';
+                        listEl.appendChild(empty);
+                        return;
+                    }
+
+                    comments.forEach(c => listEl.appendChild(buildCommentCard(c)));
+                } catch (e) {
+                    listEl.innerHTML = '';
+                    const err = document.createElement('div');
+                    err.className = 'comment-empty';
+                    err.textContent = '加载失败，请稍后重试。';
+                    listEl.appendChild(err);
+                }
+            }
+
+            async function submitPostComment(pid) {
+                const nameEl = document.getElementById('post-comment-name');
+                const contactEl = document.getElementById('post-comment-contact');
+                const contentEl = document.getElementById('post-comment-content');
+                const btn = document.getElementById('post-comment-submit');
+                const statusEl = document.getElementById('post-comment-status');
+
+                if (!contentEl || !btn) return;
+                const name = (nameEl?.value || '').trim();
+                const contact = (contactEl?.value || '').trim();
+                const content = (contentEl.value || '').trim();
+                if (!content) {
+                    if (statusEl) statusEl.textContent = '请填写留言内容。';
+                    return;
+                }
+
+                btn.disabled = true;
+                if (statusEl) statusEl.textContent = '提交中...';
+                try {
+                    const res = await fetch(`/api/comments/post/${encodeURIComponent(pid)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, contact, content })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data?.success) throw new Error(data?.message || 'FAILED');
+
+                    contentEl.value = '';
+                    if (statusEl) statusEl.textContent = '已提交，等待审核。';
+                    await loadPostComments(pid);
+                } catch (e) {
+                    if (statusEl) statusEl.textContent = '提交失败，请稍后重试。';
+                } finally {
+                    btn.disabled = false;
+                    setTimeout(() => {
+                        if (statusEl) statusEl.textContent = '';
+                    }, 2000);
+                }
+            }
+
+            function initPostComments(pid) {
+                const wrap = document.getElementById('post-comments');
+                if (wrap) wrap.style.display = 'block';
+                const btn = document.getElementById('post-comment-submit');
+                if (btn) btn.addEventListener('click', () => submitPostComment(pid));
+                loadPostComments(pid);
             }
         });
     </script>

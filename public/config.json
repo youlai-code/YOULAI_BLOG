@@ -39,5 +39,9 @@
     "features": {
         "enableEditor": false,
         "adminPassword": "123"
+    },
+    "seo": {
+        "siteUrl": "https://youlainote.cn",
+        "postSubdomainBase": ""
     }
 }

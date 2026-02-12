@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 | 又来笔记</title>
+    <meta name="description" content="管理后台：文章、留言审核、专栏等。">
+    <link rel="icon" type="image/jpeg" href="/img/icon.png">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+
+<body>
+    <div class="wrap">
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="brand">YOULAI ADMIN</div>
+                <div class="muted">最简管理界面</div>
+            </div>
+            <div class="topbar-right">
+                <a class="btn" href="/">回到主页</a>
+                <a class="btn" href="/editor.html">写文章</a>
+                <button id="btn-logout" class="btn btn-ghost" type="button">退出</button>
+            </div>
+        </header>
+
+        <main>
+            <section id="login-panel" class="panel" style="display:none;">
+                <h2>登录</h2>
+                <div class="row">
+                    <input id="admin-password" type="password" class="input" placeholder="管理员密码">
+                    <button id="btn-login" class="btn btn-primary" type="button">登录</button>
+                </div>
+                <div id="login-status" class="status"></div>
+                <div class="muted" style="margin-top:10px;">密码来源优先使用服务端环境变量 `ADMIN_PASSWORD`，未配置时回退到 `public/config.json`。</div>
+            </section>
+
+            <section id="app-panel" style="display:none;">
+                <nav class="tabs">
+                    <button class="tab active" data-tab="posts" type="button">文章</button>
+                    <button class="tab" data-tab="comments" type="button">留言审核</button>
+                    <button class="tab" data-tab="columns" type="button">专栏</button>
+                    <button class="tab" data-tab="users" type="button">用户</button>
+                </nav>
+
+                <section class="panel" data-panel="posts">
+                    <div class="panel-head">
+                        <h2>文章管理</h2>
+                        <div class="panel-actions">
+                            <a class="btn btn-primary" href="/editor.html">新建文章</a>
+                            <button id="btn-refresh-posts" class="btn" type="button">刷新</button>
+                        </div>
+                    </div>
+                    <div id="posts-status" class="status"></div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>标题</th>
+                                    <th>日期</th>
+                                    <th>专栏</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="posts-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="panel" data-panel="comments" style="display:none;">
+                    <div class="panel-head">
+                        <h2>留言审核</h2>
+                        <div class="panel-actions">
+                            <select id="comments-status" class="input" style="max-width: 180px;">
+                                <option value="pending" selected>待审核</option>
+                                <option value="approved">已通过</option>
+                                <option value="rejected">已拒绝</option>
+                            </select>
+                            <button id="btn-refresh-comments" class="btn" type="button">刷新</button>
+                        </div>
+                    </div>
+                    <div id="comments-status-text" class="status"></div>
+
+                    <h3 class="subhead">网站留言板</h3>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>昵称</th>
+                                    <th>内容</th>
+                                    <th>联系方式</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="site-comments-tbody"></tbody>
+                        </table>
+                    </div>
+
+                    <h3 class="subhead" style="margin-top:22px;">文章留言</h3>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>文章ID</th>
+                                    <th>时间</th>
+                                    <th>昵称</th>
+                                    <th>内容</th>
+                                    <th>联系方式</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="post-comments-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="panel" data-panel="columns" style="display:none;">
+                    <div class="panel-head">
+                        <h2>专栏管理</h2>
+                        <div class="panel-actions">
+                            <a class="btn btn-primary" href="/columns-admin.html">打开专栏管理页</a>
+                            <a class="btn" href="/columns">查看专栏页</a>
+                        </div>
+                    </div>
+                    <div class="muted">专栏的新增/编辑/删除已放在专栏管理页，后台这里只做入口聚合。</div>
+                </section>
+
+                <section class="panel" data-panel="users" style="display:none;">
+                    <div class="panel-head">
+                        <h2>用户管理</h2>
+                    </div>
+                    <div class="muted">当前版本没有用户系统（登录仍是管理员密码 + token），后续如要做注册/权限分级再接入。</div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/admin.js"></script>
+</body>
+
+</html>
+

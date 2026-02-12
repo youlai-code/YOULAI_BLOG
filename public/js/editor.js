@@ -4,6 +4,17 @@ const input = document.getElementById('markdown-input');
 const preview = document.getElementById('preview-content');
 const previewPane = document.querySelector('.preview-pane');
 let currentEditingId = null;
+let columnsCache = [];
+
+function getAdminToken() {
+    return localStorage.getItem('YOULAI_ADMIN_TOKEN') || '';
+}
+
+function withAdminHeaders(headers) {
+    const token = getAdminToken();
+    if (!token) return headers;
+    return { ...headers, 'x-admin-token': token };
+}
 
 // 初始化
 document.addEventListener('DOMContentLoaded', async () => {
@@ -16,6 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         String(now.getMinutes()).padStart(2, '0');
         
     document.getElementById('in-date').value = formattedDate;
+
+    await loadColumnsOptions('');
     
     const params = new URLSearchParams(window.location.search);
     const editId = params.get('id');
@@ -24,6 +37,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     updateWordCount(); // 初始化字数
 });
+
+async function loadColumnsOptions(selectedId) {
+    const selectEl = document.getElementById('in-column');
+    if (!selectEl) return;
+    try {
+        const res = await fetch('/api/columns');
+        const data = await res.json();
+        columnsCache = Array.isArray(data?.columns) ? data.columns : [];
+
+        selectEl.innerHTML = '';
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = '未加入专栏';
+        selectEl.appendChild(emptyOpt);
+
+        columnsCache.forEach(col => {
+            const opt = document.createElement('option');
+            opt.value = col.id;
+            opt.textContent = col.name;
+            selectEl.appendChild(opt);
+        });
+
+        selectEl.value = selectedId || '';
+    } catch (e) {
+        selectEl.value = selectedId || '';
+    }
+}
 
 // 加载已有文章
 async function loadPostForEdit(id) {
@@ -50,6 +90,7 @@ async function loadPostForEdit(id) {
         document.getElementById('in-tags').value = Array.isArray(meta.tags) ? meta.tags.join(' / ') : meta.tags;
         document.getElementById('in-summary').value = meta.summary;
         document.getElementById('in-cover').value = meta.cover || '';  // 加载封面
+        await loadColumnsOptions(meta.columnId || '');
 
         // 如果有封面，显示预览
         if (meta.cover) {
@@ -138,6 +179,7 @@ async function uploadPastedImage(file) {
     try {
         const res = await fetch('/api/upload-image', {
             method: 'POST',
+            headers: withAdminHeaders({}),
             body: formData
         });
         const result = await res.json();
@@ -192,7 +234,8 @@ async function publish() {
         tags: document.getElementById('in-tags').value,
         summary: document.getElementById('in-summary').value,
         content: input.value,
-        cover: document.getElementById('in-cover').value || null  // 封面（可选，为空则传 null）
+        cover: document.getElementById('in-cover').value || null,
+        columnId: document.getElementById('in-column')?.value || ''
     };
 
     console.log("Preparing to publish:", data); // Debug log
@@ -205,7 +248,7 @@ async function publish() {
     try {
         const res = await fetch('/api/upload', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: withAdminHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify(data)
         });
         const result = await res.json();
@@ -236,7 +279,7 @@ async function aiAutoFill() {
     btn.disabled = true;
 
     try {
-        const res = await fetch('/api/ai-generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+        const res = await fetch('/api/ai-generate', { method: 'POST', headers: withAdminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ content }) });
         const result = await res.json();
         if (result.success) {
             if (!document.getElementById('in-title').value) document.getElementById('in-title').value = result.data.title;
@@ -280,6 +323,7 @@ async function handleCoverUpload(event) {
     try {
         const res = await fetch('/api/upload-image', {
             method: 'POST',
+            headers: withAdminHeaders({}),
             body: formData
         });
         const result = await res.json();
@@ -346,6 +390,7 @@ async function handleImageUpload(event) {
         // 上传到服务器
         const res = await fetch('/api/upload-image', {
             method: 'POST',
+            headers: withAdminHeaders({}),
             body: formData
         });
 

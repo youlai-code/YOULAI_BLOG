@@ -116,32 +116,31 @@
         const msg = document.getElementById('message');
         
         try {
-            const res = await fetch('config.json');
-            const config = await res.json();
-            
-            // 简单的前端验证
-            const correctPwd = config.features?.adminPassword || 'admin';
-            
-            if (pwd === correctPwd) {
-                msg.className = 'msg success';
-                msg.innerText = 'ACCESS GRANTED';
-                localStorage.setItem('YOULAI_ADMIN', 'true');
-                setTimeout(() => {
-                    location.href = '/'; // 跳转回首页
-                }, 1000);
-            } else {
-                msg.className = 'msg error';
-                msg.innerText = 'ACCESS DENIED';
-                localStorage.removeItem('YOULAI_ADMIN');
-            }
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd })
+            });
+            const data = await res.json();
+            if (!res.ok || !data?.success) throw new Error(data?.message || 'LOGIN_FAILED');
+
+            msg.className = 'msg success';
+            msg.innerText = 'ACCESS GRANTED';
+            localStorage.setItem('YOULAI_ADMIN', 'true');
+            localStorage.setItem('YOULAI_ADMIN_TOKEN', data.token);
+            setTimeout(() => {
+                location.href = '/admin.html';
+            }, 700);
         } catch (e) {
-            msg.innerText = 'System Error';
+            msg.className = 'msg error';
+            msg.innerText = 'ACCESS DENIED';
             console.error(e);
         }
     }
 
     function logout() {
         localStorage.removeItem('YOULAI_ADMIN');
+        localStorage.removeItem('YOULAI_ADMIN_TOKEN');
         document.getElementById('message').innerText = 'Logged out successfully';
         document.getElementById('message').className = 'msg';
         setTimeout(() => {

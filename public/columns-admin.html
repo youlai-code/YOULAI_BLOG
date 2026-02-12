@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专栏管理 | 又来笔记</title>
+    <meta name="description" content="专栏管理：新增、编辑、删除专栏，并将文章归类到专栏。">
+    <link rel="icon" type="image/jpeg" href="/img/icon.png">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/background.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/markdown.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        fetch('config.json')
+            .then(res => res.json())
+            .then(config => {
+                if (!config.features?.enableEditor && localStorage.getItem('YOULAI_ADMIN') !== 'true' && !localStorage.getItem('YOULAI_ADMIN_TOKEN')) {
+                    document.body.innerHTML = `
+                        <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#222; color:white; flex-direction:column;">
+                            <h1 style="font-family:'Bangers'; color:red; font-size:3rem;">ACCESS DENIED</h1>
+                            <p>专栏管理功能已关闭。</p>
+                            <a href="/" style="color:#f5e02e; margin-top:20px;">返回首页</a>
+                        </div>
+                    `;
+                }
+            })
+            .catch(e => console.error(e));
+    </script>
+</head>
+
+<body>
+    <div class="bg-layer">
+        <div class="bg-stripes"></div>
+        <div class="bg-dots"></div>
+        <div class="shape shape-star" style="top: 10%; left: 10%; animation-duration: 8s;">★</div>
+        <div class="shape shape-star" style="top: 50%; right: 15%; animation-duration: 12s; font-size: 1.5rem; color:var(--p5-yellow);">★</div>
+        <div class="shape shape-shard" style="left: 20%; width: 60px; height: 60px; animation-delay: 0s;"></div>
+        <div class="shape shape-shard" style="left: 70%; width: 40px; height: 40px; animation-delay: 5s;"></div>
+        <div class="shape shape-shard" style="left: 45%; width: 80px; height: 80px; animation-delay: 2s; background: var(--p5-black);"></div>
+        <div class="shape shape-jagged" style="top: 80%; left: 5%; animation-duration: 3s;"></div>
+        <div class="shape shape-jagged" style="top: 20%; right: 5%; animation-duration: 4s; transform: scale(0.5);"></div>
+    </div>
+
+    <nav class="top-nav">
+        <div class="marquee-wrap">
+            <div class="marquee-content">专栏管理（作者权限）</div>
+        </div>
+        <a href="/" class="brand-logo">YOULAI NOTE</a>
+        <div class="menu-list">
+            <a href="/" class="menu-btn">首页</a>
+            <a href="/columns" class="menu-btn">专栏</a>
+            <a href="/columns-admin.html" class="menu-btn active">管理</a>
+            <a href="/message-board" class="menu-btn">留言板</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div style="flex:3; display:flex; flex-direction:column;">
+            <main class="content-area">
+                <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
+                    <h1 style="margin-top:0;">专栏管理</h1>
+                    <p style="color:#444;">配置专栏列表后，编辑文章时可选择加入哪个专栏。</p>
+
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin: 18px 0 10px;">
+                        <button id="btn-add-column" class="p5-cta-btn" type="button">新增专栏</button>
+                        <button id="btn-save-columns" class="p5-cta-btn" type="button">保存</button>
+                        <a class="p5-cta-btn p5-cta-btn--ghost" href="/columns">查看专栏页</a>
+                        <div id="columns-admin-status" class="comment-status"></div>
+                    </div>
+
+                    <div style="overflow:auto; border:3px solid black; box-shadow:6px 6px 0 var(--p5-black);">
+                        <table style="width:100%; border-collapse: collapse; min-width: 780px;">
+                            <thead>
+                                <tr style="background: rgba(0,0,0,0.06);">
+                                    <th style="text-align:left; padding:12px; border-bottom:2px solid black;">ID</th>
+                                    <th style="text-align:left; padding:12px; border-bottom:2px solid black;">名称</th>
+                                    <th style="text-align:left; padding:12px; border-bottom:2px solid black;">描述</th>
+                                    <th style="text-align:left; padding:12px; border-bottom:2px solid black;">封面URL</th>
+                                    <th style="text-align:left; padding:12px; border-bottom:2px solid black;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="columns-admin-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <aside class="sidebar-area">
+            <div class="widget-box">
+                <div class="widget-title">规则</div>
+                <div style="margin-top: 15px; font-size: 0.95rem; color: #ddd; line-height: 1.7;">
+                    <div>1) `id` 用于文章绑定（建议小写英文+短横线）</div>
+                    <div style="margin-top:8px;">2) 删除专栏不会自动修改文章归属</div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="/js/model.js"></script>
+    <script src="/js/columns-admin.js"></script>
+</body>
+
+</html>
