@@ -13,6 +13,23 @@ function formatDateTime(iso) {
     }
 }
 
+async function checkAdminAndInitButtons() {
+    try {
+        const cfgRes = await fetch('/config.json');
+        if (cfgRes.ok) {
+            const config = await cfgRes.json();
+            const isAdmin = config.features?.enableEditor === true || 
+                           localStorage.getItem('YOULAI_ADMIN') === 'true' || 
+                           Boolean(localStorage.getItem('YOULAI_ADMIN_TOKEN'));
+            
+            const adminButtons = document.getElementById('admin-buttons');
+            if (adminButtons) adminButtons.style.display = isAdmin ? 'flex' : 'none';
+        }
+    } catch (e) {
+        console.error('Failed to check admin status:', e);
+    }
+}
+
 function buildCommentCard(comment) {
     const card = document.createElement('div');
     card.className = 'comment-card';
@@ -117,6 +134,7 @@ async function submitSiteComment() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    checkAdminAndInitButtons();
     const btn = document.getElementById('site-comment-submit');
     if (btn) btn.addEventListener('click', submitSiteComment);
     loadSiteComments();

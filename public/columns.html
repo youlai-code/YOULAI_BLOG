@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/css/background.css">
     <link rel="stylesheet" href="/css/layout.css">
     <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/posts.css">
     <link rel="stylesheet" href="/css/markdown.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -33,13 +34,24 @@
 
     <nav class="top-nav">
         <div class="marquee-wrap">
-            <div class="marquee-content">专栏页面（占位）- 后续将接入专栏数据与详情页</div>
+            <div class="marquee-content">专栏页面 - 按主题聚合文章</div>
         </div>
-        <a href="/" class="brand-logo">YOULAI NOTE</a>
-        <div class="menu-list">
-            <a href="/" class="menu-btn">首页</a>
-            <a href="/columns" class="menu-btn active">专栏</a>
-            <a href="/message-board" class="menu-btn">留言板</a>
+        <div class="nav-left">
+            <a href="/" class="brand-logo">YOULAI NOTE</a>
+        </div>
+        <div class="nav-right">
+            <div class="menu-list">
+                <a href="/" class="menu-btn">首页</a>
+                <a href="/columns" class="menu-btn active">专栏</a>
+                <a href="/message-board" class="menu-btn">留言板</a>
+                <a href="/" class="menu-btn" onclick="localStorage.setItem('returnPage', 'discovery');">发现</a>
+                <a href="/" class="menu-btn" onclick="localStorage.setItem('returnPage', 'portfolio');">作品集</a>
+                <a href="/" class="menu-btn" onclick="localStorage.setItem('returnPage', 'about');">关于</a>
+            </div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="搜索日志...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
         </div>
     </nav>
 
@@ -53,7 +65,6 @@
                             <p style="margin: 0; color:#444;">将文章按主题聚合。</p>
                         </div>
                         <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                            <a id="columns-admin-link" class="p5-cta-btn" href="/columns-admin.html" style="display:none;">管理专栏</a>
                             <a class="p5-cta-btn p5-cta-btn--ghost" href="/">返回首页</a>
                         </div>
                     </div>
@@ -64,6 +75,30 @@
         </div>
 
         <aside class="sidebar-area">
+            <div class="widget-box">
+                <div class="widget-title">站长</div>
+                <div class="profile-mini" style="margin-top: 15px;">
+                    <img src="/img/head.jpg" alt="Avatar" onerror="this.src='https://placehold.co/60x60'">
+                    <div>
+                        <div style="font-weight:900; color:var(--p5-white);">又来</div>
+                        <div style="font-size:0.8rem; color:#aaa;">独立开发者</div>
+                    </div>
+                </div>
+                <div style="margin: 15px 0; font-size: 0.9rem; color: #ddd; line-height: 1.6;">
+                    吃的好，睡得好，就开心😄！
+                </div>
+
+                <!-- 管理按钮 (仅管理员可见) -->
+                <div id="admin-buttons" style="display: none; margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="/editor.html" class="admin-btn" style="flex:1; text-align:center; background:var(--p5-red); color:white; padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:0.9rem; border:2px solid var(--p5-white); border-radius:4px; transition:all 0.2s;">
+                        <i class="fas fa-pen"></i> 写文章
+                    </a>
+                    <a href="/admin.html" class="admin-btn" style="flex:1; text-align:center; background:var(--p5-black); color:var(--p5-yellow); padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:0.9rem; border:2px solid var(--p5-yellow); border-radius:4px; transition:all 0.2s;">
+                        <i class="fas fa-cog"></i> 管理
+                    </a>
+                </div>
+            </div>
+
             <div class="widget-box">
                 <div class="widget-title">说明</div>
                 <div style="margin-top: 15px; font-size: 0.95rem; color: #ddd; line-height: 1.7;">
@@ -76,16 +111,58 @@
     </div>
 
     <footer class="footer-bar">
-        <div class="footer-info">
-            <div>
-                <span id="footer-copyright" style="font-weight:900; color:var(--p5-yellow);">© 2025 又来笔记.</span>
-                代码即世界.
+        <div class="footer-content">
+            <div class="footer-column">
+                <div class="footer-brand">
+                    <div class="brand-logo-footer">YOULAI NOTE</div>
+                    <div class="brand-tagline">代码即世界</div>
+                </div>
+                <div class="footer-about">
+                    YOULAI NOTE是一个专注于Unity3D、C#、Web全栈开发的个人技术博客。分享游戏开发经验、编程技巧和独立开发者的心路历程。
+                </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 8px;">
-                <a href="https://beian.miit.gov.cn/" style="font-size: 0.85rem; color: #aaa;">湘ICP备2026001893号</a>
-                <a href="https://beian.mps.gov.cn/#/query/webSearch?code=43010402002500" rel="noreferrer" target="_blank"
-                    style="font-size: 0.85rem; color: #aaa; display: flex; align-items: center; gap: 5px;">
-                    <img src="/img/备案图标.png" alt="" style="width: 18px; height: 18px;">
+            
+            <div class="footer-column">
+                <div class="footer-heading">网站导航</div>
+                <ul class="footer-links">
+                    <li><a href="/">首页</a></li>
+                    <li><a href="/columns">专栏</a></li>
+                    <li><a href="/message-board">留言板</a></li>
+                    <li><a href="/" onclick="localStorage.setItem('returnPage', 'portfolio');">作品集</a></li>
+                    <li><a href="/" onclick="localStorage.setItem('returnPage', 'about');">关于</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-column">
+                <div class="footer-heading">资源链接</div>
+                <ul class="footer-links">
+                    <li><a href="/" onclick="localStorage.setItem('returnPage', 'discovery');">发现</a></li>
+                    <li><a href="/">Unity3D</a></li>
+                    <li><a href="/">C#</a></li>
+                    <li><a href="/">Web开发</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-column">
+                <div class="footer-heading">联系我们</div>
+                <div class="footer-contact">
+                    <div class="footer-social-links">
+                        <div class="social-links" id="social-links-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="footer-bottom-inner">
+                <span class="footer-copyright"><span id="footer-copyright" style="font-weight:900; color:var(--p5-yellow);">YOULAI NOTE</span> 2025 - 2026. All rights reserved.</span>
+                <span class="footer-divider">|</span>
+                <a href="/" onclick="localStorage.setItem('returnPage', 'about');">关于我们</a>
+                <span class="footer-divider">|</span>
+                <a href="https://beian.miit.gov.cn/">湘ICP备2026001893号</a>
+                <span class="footer-divider">|</span>
+                <a href="https://beian.mps.gov.cn/#/query/webSearch?code=43010402002500" rel="noreferrer" target="_blank" class="footer-beian-link">
+                    <img src="/img/备案图标.png" alt="" style="width: 14px; height: 14px;">
                     湘公网安备43010402002500号
                 </a>
             </div>

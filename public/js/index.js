@@ -52,39 +52,36 @@ document.addEventListener('DOMContentLoaded', initApp);
 async function initApp() {
     const container = document.getElementById('blog-list-container');
 
-    // 0. 优先加载配置 (确定权限和UI)
     try {
-        const cfgRes = await fetch('config.json');
+        const [cfgRes, postsRes] = await Promise.all([
+            fetch('config.json'),
+            fetch('posts.json')
+        ]);
+
         if (cfgRes.ok) {
             const config = await cfgRes.json();
-            // 设置权限
             window.IS_ADMIN = config.features?.enableEditor === true || localStorage.getItem('YOULAI_ADMIN') === 'true' || Boolean(localStorage.getItem('YOULAI_ADMIN_TOKEN'));
             window.SITE_CONFIG = config;
-            // 应用配置到界面
             applySiteConfig(config);
         }
-    } catch (e) {
-        console.error("Config load failed:", e);
-    }
 
-    try {
-        const res = await fetch('posts.json');
-        if (!res.ok) throw new Error("JSON NOT FOUND");
-        allPostsCache = await res.json();
+        if (!postsRes.ok) throw new Error("JSON NOT FOUND");
+        allPostsCache = await postsRes.json();
 
-        // 初始状态：显示所有文章
         currentFilteredPosts = allPostsCache;
         setHomeTopVisible(true);
         renderPage(1);
-        
-        // 更新站点统计信息
-        updateSiteStats();
 
-        // 检查 URL 参数，如果有 id 则加载文章
+        setTimeout(() => {
+            updateSiteStats();
+            renderCategoryTags();
+            renderRandomPosts();
+        }, 0);
+
         const params = new URLSearchParams(window.location.search);
         const postId = params.get('id');
         if (postId) {
-            await showPost(postId, false); // false 表示不重复 pushState
+            await showPost(postId, false);
         }
     } catch (err) {
         setHomeTopVisible(true);
@@ -96,6 +93,88 @@ async function initApp() {
             </div>
         `;
     }
+}
+
+let allCategoryTags = [];
+
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function renderCategoryTags(randomize = false) {
+    const container = document.getElementById('category-tags');
+    const shuffleBtn = document.getElementById('shuffle-tags-btn');
+    if (!container) return;
+
+    if (allCategoryTags.length === 0) {
+        const tagCounts = {};
+        allPostsCache.forEach(post => {
+            let tags = [];
+            if (Array.isArray(post.tags)) {
+                tags = post.tags;
+            } else if (typeof post.tags === 'string') {
+                tags = post.tags.split(/[\s,]+/);
+            }
+            
+            tags.forEach(tag => {
+                const cleanTag = tag.trim().toUpperCase();
+                if (cleanTag) {
+                    tagCounts[cleanTag] = (tagCounts[cleanTag] || 0) + 1;
+                }
+            });
+        });
+        allCategoryTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+    }
+
+    if (allCategoryTags.length === 0) {
+        container.innerHTML = '<span style="color: #aaa; font-size: 0.85rem;">暂无分类</span>';
+        if (shuffleBtn) shuffleBtn.style.display = 'none';
+        return;
+    }
+
+    if (shuffleBtn) {
+        shuffleBtn.style.display = allCategoryTags.length > 8 ? 'block' : 'none';
+    }
+
+    const displayTags = allCategoryTags.length > 8 
+        ? (randomize ? shuffleArray(allCategoryTags) : allCategoryTags).slice(0, 8)
+        : allCategoryTags;
+
+    container.innerHTML = displayTags.map(([tag, count]) => {
+        return `<a href="#" class="tag-item" onclick="filterPosts('${tag}'); return false;" title="${count}篇文章"># ${tag} <span style="font-size:0.7em; opacity:0.8;">(${count})</span></a>`;
+    }).join('');
+}
+
+function renderRandomPosts(randomize = false) {
+    const container = document.getElementById('random-posts');
+    const shuffleBtn = document.getElementById('shuffle-posts-btn');
+    if (!container) return;
+
+    if (allPostsCache.length === 0) {
+        container.innerHTML = '<span style="color: #aaa; font-size: 0.85rem;">暂无文章</span>';
+        if (shuffleBtn) shuffleBtn.style.display = 'none';
+        return;
+    }
+
+    if (shuffleBtn) {
+        shuffleBtn.style.display = allPostsCache.length > 6 ? 'block' : 'none';
+    }
+
+    const displayPosts = allPostsCache.length > 6
+        ? (randomize ? shuffleArray(allPostsCache) : allPostsCache).slice(0, 6)
+        : allPostsCache;
+
+    container.innerHTML = displayPosts.map(post => {
+        return `<div class="random-post-item" onclick="goToPost('${post.id}')" style="padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.2); cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)';" onmouseout="this.style.background='transparent';">
+            <div style="font-size:0.9rem; color:var(--p5-white); font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${post.title}</div>
+            <div style="font-size:0.75rem; color:#888; margin-top:4px;">${post.date || ''}</div>
+        </div>`;
+    }).join('');
 }
 
 async function updateSiteStats() {
@@ -132,11 +211,8 @@ async function updateSiteStats() {
 function applySiteConfig(config) {
     try {
         // --- 0. 权限控制 UI ---
-        const btnWrite = document.getElementById('btn-write');
-        if (btnWrite) btnWrite.style.display = window.IS_ADMIN ? 'inline-block' : 'none';
-
-        const btnAdmin = document.getElementById('btn-admin');
-        if (btnAdmin) btnAdmin.style.display = window.IS_ADMIN ? 'inline-block' : 'none';
+        const adminButtons = document.getElementById('admin-buttons');
+        if (adminButtons) adminButtons.style.display = window.IS_ADMIN ? 'flex' : 'none';
 
         // --- 1. 加载 Owner 信息 ---
         if (config.owner) {
@@ -232,12 +308,12 @@ function renderPage(page) {
     pagedPosts.forEach(post => {
         let tagsDisplay = Array.isArray(post.tags) ? post.tags.join(' / ') : post.tags;
 
-        const actionsHtml = `
+        const editBtnHtml = window.IS_ADMIN ? `
             <div class="card-actions">
-                <button class="action-mini-btn btn-comment" onclick="event.stopPropagation(); goToPost('${post.id}', '#post-comments')">
-                    COMMENT
+                <button class="action-mini-btn btn-edit" onclick="event.stopPropagation(); window.location.href='/editor.html?id=${post.id}'">
+                    EDIT
                 </button>
-            </div>`;
+            </div>` : '';
 
         const html = `
     <article class="post-entry">
@@ -248,7 +324,7 @@ function renderPage(page) {
             <h2 class="post-title">${post.title}</h2>
             <p class="post-summary">${post.summary}</p>
         </div>
-        ${actionsHtml}
+        ${editBtnHtml}
     </article>
 `;
         container.innerHTML += html;
@@ -566,7 +642,129 @@ async function showAboutPage() {
     }
 }
 
-// js/index.js 中的 deletePost 函数
+async function showPortfolioPage() {
+    exitPostMode();
+    setHomeTopVisible(false);
+
+    document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+    const portfolioBtn = document.getElementById('btn-portfolio');
+    if (portfolioBtn) portfolioBtn.classList.add('active');
+
+    const container = document.getElementById('blog-list-container');
+    container.style.opacity = 0;
+    container.innerHTML = `<h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">LOADING PORTFOLIO...</h2>`;
+
+    try {
+        const response = await fetch('/portfolio.json');
+        if (!response.ok) throw new Error("Portfolio data not found");
+        
+        const portfolioItems = await response.json();
+
+        if (!Array.isArray(portfolioItems) || portfolioItems.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:60px;">
+                    <h2 style="color:white; font-family:'Bangers'; font-size:2rem;">暂无作品</h2>
+                    <p style="color:#aaa; margin-top:20px;">作品集正在准备中，敬请期待...</p>
+                </div>
+            `;
+            container.style.opacity = 1;
+            return;
+        }
+
+        container.innerHTML = '';
+
+        const header = document.createElement('div');
+        header.style.cssText = 'text-align:center; margin-bottom:40px;';
+        header.innerHTML = `
+            <h2 style="font-family:'Bangers'; font-size:2.5rem; color:var(--p5-yellow); text-shadow:3px 3px 0 var(--p5-black);">MY WORKS</h2>
+            <p style="color:#aaa; margin-top:10px; font-size:0.95rem;">独立开发的作品集合，持续更新中...</p>
+        `;
+        container.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = 'portfolio-grid';
+        grid.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
+            padding: 0 20px;
+        `;
+
+        portfolioItems.forEach(item => {
+            const card = document.createElement('div');
+            const rotate = (Math.random() * 4 - 2).toFixed(1);
+            
+            card.className = 'portfolio-card';
+            card.style.cssText = `
+                background: var(--p5-white);
+                border: 4px solid var(--p5-black);
+                box-shadow: 8px 8px 0 var(--p5-black);
+                transform: rotate(${rotate}deg);
+                transition: all 0.3s ease;
+                overflow: hidden;
+                position: relative;
+            `;
+
+            card.onmouseover = () => {
+                card.style.transform = `rotate(0deg) translateY(-8px)`;
+                card.style.boxShadow = '12px 16px 0 var(--p5-black)';
+                card.style.zIndex = '10';
+            };
+            card.onmouseout = () => {
+                card.style.transform = `rotate(${rotate}deg)`;
+                card.style.boxShadow = '8px 8px 0 var(--p5-black)';
+                card.style.zIndex = '1';
+            };
+
+            const tagsHtml = Array.isArray(item.tags) 
+                ? item.tags.map(tag => `<span style="background:var(--p5-yellow); color:var(--p5-black); padding:2px 8px; font-size:0.75rem; font-weight:bold; border:2px solid var(--p5-black); margin-right:5px;">${tag}</span>`).join('')
+                : '';
+
+            const statusColor = item.status === '已上线' ? 'var(--p5-red)' : '#666';
+
+            card.innerHTML = `
+                <div style="position:relative; height:180px; overflow:hidden; border-bottom:4px solid var(--p5-black);">
+                    ${item.cover 
+                        ? `<img src="${item.cover}" alt="${item.name}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://placehold.co/400x200?text=No+Image'">`
+                        : `<div style="width:100%; height:100%; background:var(--p5-black); display:flex; align-items:center; justify-content:center;"><i class="fas fa-box" style="font-size:4rem; color:var(--p5-yellow);"></i></div>`
+                    }
+                    <div style="position:absolute; top:10px; right:10px; background:${statusColor}; color:white; padding:4px 12px; font-size:0.75rem; font-weight:bold; border:2px solid var(--p5-black);">
+                        ${item.status || '开发中'}
+                    </div>
+                </div>
+                <div style="padding:20px;">
+                    <h3 style="font-family:'Bangers'; font-size:1.5rem; color:var(--p5-black); margin-bottom:10px; letter-spacing:1px;">${item.name}</h3>
+                    <p style="color:#555; font-size:0.9rem; line-height:1.6; margin-bottom:15px; min-height:50px;">${item.description}</p>
+                    <div style="margin-bottom:15px;">${tagsHtml}</div>
+                    ${item.url 
+                        ? `<a href="${item.url}" target="_blank" rel="noopener noreferrer" 
+                            style="display:inline-block; background:var(--p5-red); color:white; padding:10px 25px; font-family:'Bangers'; font-size:1rem; text-decoration:none; border:3px solid var(--p5-black); box-shadow:4px 4px 0 var(--p5-black); transition:all 0.2s;"
+                            onmouseover="this.style.transform='translate(-2px, -2px)'; this.style.boxShadow='6px 6px 0 var(--p5-black)';"
+                            onmouseout="this.style.transform='translate(0, 0)'; this.style.boxShadow='4px 4px 0 var(--p5-black)';">
+                            <i class="fas fa-external-link-alt"></i> 访问
+                        </a>`
+                        : ''
+                    }
+                </div>
+            `;
+
+            grid.appendChild(card);
+        });
+
+        container.appendChild(grid);
+        setTimeout(() => { container.style.opacity = 1; }, 50);
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `
+            <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red; max-width:500px; margin:50px auto;">
+                <h2 style="font-family:'Bangers'; color:red;">ERROR</h2>
+                <p>Failed to load portfolio data.</p>
+            </div>
+        `;
+        container.style.opacity = 1;
+    }
+}
 
 async function deletePost(id) {
     // 使用 Phantom.confirm 替代原生 confirm

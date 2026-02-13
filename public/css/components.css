@@ -214,7 +214,6 @@
 .social-links {
     display: flex;
     gap: 15px;
-    margin-top: 15px;
 }
 
 .social-link {
@@ -229,9 +228,37 @@
 }
 
 .email-box {
-    margin-top: 10px;
     font-size: 0.9rem;
     color: #aaa;
+}
+
+.footer-social-links .social-links {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.footer-social-links .social-link {
+    font-size: 1.2rem;
+    color: #aaa;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.footer-social-links .social-link:hover {
+    color: var(--p5-yellow);
+    transform: translateY(-2px);
+}
+
+.footer-contact .email-box {
+    margin-bottom: 15px;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.footer-contact .email-box i {
+    margin-right: 10px;
+    color: var(--p5-yellow);
 }
 
 /* --- 自定义滚动条 (针对 TOC) --- */

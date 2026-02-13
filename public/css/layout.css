@@ -4,7 +4,6 @@
 .top-nav {
     background: var(--p5-black);
     padding: 20px 40px 30px 40px;
-    /* Added bottom padding for marquee */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -18,8 +17,6 @@
     box-sizing: border-box;
 }
 
-/* ... (skip unchanged lines) ... */
-
 .marquee-wrap {
     background: var(--p5-red);
     color: white;
@@ -30,7 +27,6 @@
     font-size: 0.9rem;
     position: absolute;
     bottom: 0;
-    /* Align to bottom */
     left: 0;
     width: 100%;
     z-index: 1001;
@@ -40,84 +36,100 @@
 
 .brand-logo {
     font-family: 'Bangers';
-    color: var(--p5-white);
-    font-size: 2.5rem;
+    color: var(--p5-yellow);
+    font-size: 2rem;
     text-decoration: none;
-    text-shadow: 3px 3px 0 var(--p5-red);
-    transform: rotate(-2deg);
+    text-shadow: 2px 2px 0 var(--p5-red);
     cursor: pointer;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 .menu-list {
     display: flex;
-    gap: 15px;
+    gap: 8px;
+    align-items: center;
 }
 
 .menu-btn {
-    background: var(--p5-white);
-    color: var(--p5-black);
+    background: transparent;
+    color: var(--p5-white);
     font-family: 'Bangers';
-    font-size: 1.4rem;
-    padding: 8px 25px;
+    font-size: 1.2rem;
+    padding: 8px 16px;
     text-decoration: none;
-    clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
+    border-radius: 4px;
     transition: all 0.2s;
     position: relative;
+    border: 2px solid transparent;
 }
 
 .menu-btn:hover {
     background: var(--p5-red);
     color: var(--p5-white);
-    transform: scale(1.1) rotate(2deg);
-    z-index: 10;
+    border-color: var(--p5-red);
 }
 
 .menu-btn.active {
     background: var(--p5-yellow);
-    color: black;
-    transform: scale(1.05);
+    color: var(--p5-black);
+    border-color: var(--p5-yellow);
 }
 
 /* --- 搜索框 --- */
 .search-box {
     position: relative;
-    margin-left: 20px;
     display: flex;
     align-items: center;
 }
 
 #search-input {
     font-family: 'Noto Sans SC', sans-serif;
-    font-size: 1rem;
+    font-size: 0.95rem;
     padding: 8px 35px 8px 15px;
-    border: 2px solid var(--p5-black);
-    background: var(--p5-white);
-    color: var(--p5-black);
+    border: 2px solid var(--p5-white);
+    background: transparent;
+    color: var(--p5-white);
     outline: none;
-    transform: skewX(-10deg);
     transition: all 0.3s;
-    width: 150px;
+    width: 180px;
+    border-radius: 4px;
+}
+
+#search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 #search-input:focus {
-    background: var(--p5-black);
-    color: var(--p5-white);
-    border-color: var(--p5-red);
-    width: 200px;
+    background: var(--p5-white);
+    color: var(--p5-black);
+    border-color: var(--p5-yellow);
+    width: 220px;
+}
+
+#search-input:focus::placeholder {
+    color: rgba(0, 0, 0, 0.5);
 }
 
 .search-icon {
     position: absolute;
-    right: 10px;
-    color: var(--p5-black);
+    right: 12px;
+    color: rgba(255, 255, 255, 0.6);
     pointer-events: none;
     transition: color 0.3s;
-    transform: skewX(-10deg);
-    /* Match input skew */
 }
 
-#search-input:focus+.search-icon {
-    color: var(--p5-red);
+#search-input:focus + .search-icon {
+    color: var(--p5-black);
 }
 
 /* --- 布局 --- */
@@ -141,33 +153,25 @@
 .sidebar-area {
     flex: 1;
     min-width: 250px;
-    position: -webkit-sticky; /* Safari */
+    position: -webkit-sticky;
     position: sticky;
-    top: 130px; /* 顶部导航栏高度 + 间距 */
+    top: 130px;
     height: fit-content;
     z-index: 100;
 }
 
 /* --- Post Reading Mode --- */
-/* 
-   2026-01-27 Update: 
-   Unify width with normal mode (About page / Home page).
-   Removed max-width restrictions to match the layout of About page.
-*/
 .container.post-reading-mode {
-    /* Keep default flex behavior (row), same as home page */
     justify-content: flex-start; 
 }
 
 .container.post-reading-mode .sidebar-area {
-    /* Reset to default sidebar styles */
     flex: 1;
     min-width: 250px;
     width: auto; 
 }
 
 .container.post-reading-mode .content-area {
-    /* Reset to default content styles */
     flex: 3;
     max-width: none; 
     margin: 0;
@@ -181,23 +185,6 @@
     z-index: 100;
     overflow: hidden;
     border-top: 5px solid var(--p5-yellow);
-}
-
-.marquee-wrap {
-    background: var(--p5-red);
-    color: white;
-    padding: 2px 0;
-    white-space: nowrap;
-    overflow: hidden;
-    font-family: 'Bangers';
-    font-size: 0.9rem;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1001;
-    transform: skewX(0deg);
-    border-bottom: none;
 }
 
 .marquee-content {
@@ -216,25 +203,146 @@
     }
 }
 
-.footer-info {
-    padding: 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.footer-content {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 60px 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+}
+
+.footer-column {
+    min-width: 200px;
+}
+
+.footer-brand {
+    margin-bottom: 20px;
+}
+
+.brand-logo-footer {
+    font-family: 'Bangers';
+    color: var(--p5-yellow);
+    font-size: 2rem;
+    text-decoration: none;
+    text-shadow: 2px 2px 0 var(--p5-red);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.brand-tagline {
+    color: #aaa;
+    font-size: 1rem;
+    margin-bottom: 20px;
+}
+
+.footer-about {
+    color: #aaa;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.footer-heading {
+    color: var(--p5-white);
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.footer-heading::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--p5-yellow);
+}
+
+.footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-links li {
+    margin-bottom: 12px;
 }
 
 .footer-links a {
-    color: #888;
-    margin-left: 20px;
+    color: #aaa;
     text-decoration: none;
-    font-weight: bold;
-    transition: 0.3s;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    display: inline-block;
 }
 
 .footer-links a:hover {
     color: var(--p5-yellow);
+    transform: translateX(5px);
+}
+
+.footer-contact {
+    color: #aaa;
+}
+
+.email-box {
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.email-box i {
+    margin-right: 10px;
+    color: var(--p5-yellow);
+}
+
+.footer-social-links {
+    margin-top: 20px;
+}
+
+.footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-bottom-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+.footer-bottom-inner a {
+    color: #aaa;
+    text-decoration: none;
+    transition: color 0.3s;
+    white-space: nowrap;
+}
+
+.footer-bottom-inner a:hover {
+    color: var(--p5-yellow);
+}
+
+.footer-divider {
+    color: #666;
+    margin: 0 4px;
+}
+
+.footer-beian-link {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 5px;
+}
+
+.footer-copyright {
+    white-space: nowrap;
 }
 
 /* --- 移动端适配 --- */
@@ -248,22 +356,86 @@
         order: 1;
     }
 
+    .top-nav {
+        padding: 15px 15px 30px 15px;
+    }
+
+    .nav-right {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
     .menu-list {
-        gap: 5px;
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     .menu-btn {
         padding: 5px 10px;
-        font-size: 1rem;
+        font-size: 0.9rem;
     }
 
     .brand-logo {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
     }
 
-    .footer-info {
-        flex-direction: column;
+    #search-input {
+        width: 120px;
+        font-size: 0.85rem;
+    }
+
+    #search-input:focus {
+        width: 150px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 40px 20px;
+    }
+
+    .footer-column {
         text-align: center;
-        gap: 15px;
+    }
+
+    .footer-heading::after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .footer-links {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .footer-links a:hover {
+        transform: translateX(0);
+    }
+
+    .footer-bottom {
+        padding: 15px 10px;
+    }
+
+    .footer-bottom-inner {
+        font-size: 0.75rem;
+        gap: 6px;
+    }
+
+    .footer-divider {
+        display: none;
+    }
+
+    .footer-bottom-inner {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .footer-content {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
     }
 }

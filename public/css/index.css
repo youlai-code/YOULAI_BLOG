@@ -1,4 +1,4 @@
-﻿/* css/index.css */
+/* css/index.css */
 
 @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+SC:wght@400;700;900&display=swap');
 
@@ -521,10 +521,12 @@ body {
 }
 
 .footer-info {
-    padding: 30px;
+    padding: 24px 30px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    flex-direction: column;
+    text-align: center;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -604,9 +606,12 @@ body {
     }
 
     .footer-info {
-        flex-direction: column;
-        text-align: center;
-        gap: 15px;
+        padding: 20px;
+    }
+    
+    .footer-social {
+        flex-wrap: wrap;
+        gap: 16px;
     }
 }
 

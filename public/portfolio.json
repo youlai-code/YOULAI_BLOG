@@ -1,0 +1,56 @@
+[
+    {
+        "id": "youlai-note",
+        "name": "又来笔记",
+        "description": "一个专注于Unity3D、C#、Web全栈开发的个人技术博客。采用P5风格设计，支持Markdown写作、代码高亮、评论系统等功能。",
+        "cover": "/img/head.jpg",
+        "url": "https://youlainote.cn",
+        "tags": ["Web", "博客", "Node.js"],
+        "status": "已上线"
+    },
+    {
+        "id": "task-master",
+        "name": "TaskMaster",
+        "description": "一款简洁高效的任务管理工具，支持看板视图、番茄钟、数据统计等功能。帮助你更好地规划和管理日常任务。",
+        "cover": "",
+        "url": "https://taskmaster.example.com",
+        "tags": ["效率", "工具", "Vue"],
+        "status": "已上线"
+    },
+    {
+        "id": "pixel-adventure",
+        "name": "像素冒险",
+        "description": "一款复古像素风格的冒险游戏，玩家需要在神秘的地下城中探索、战斗、收集宝藏。支持多平台发布。",
+        "cover": "",
+        "url": "",
+        "tags": ["Unity3D", "游戏", "像素风"],
+        "status": "开发中"
+    },
+    {
+        "id": "code-snippet",
+        "name": "CodeSnippet",
+        "description": "代码片段管理工具，支持多语言语法高亮、标签分类、快速搜索。让你的常用代码片段触手可及。",
+        "cover": "",
+        "url": "https://snippet.example.com",
+        "tags": ["工具", "效率", "Electron"],
+        "status": "已上线"
+    },
+    {
+        "id": "weather-app",
+        "name": "天气通",
+        "description": "简洁美观的天气应用，支持实时天气、7日预报、空气质量、生活指数等功能。数据来源权威可靠。",
+        "cover": "",
+        "url": "https://weather.example.com",
+        "tags": ["App", "天气", "React Native"],
+        "status": "开发中"
+    },
+    {
+        "id": "markdown-editor",
+        "name": "MD Editor Pro",
+        "description": "专业的Markdown编辑器，支持实时预览、自定义主题、导出PDF、云端同步等功能。写作者的得力助手。",
+        "cover": "",
+        "url": "https://mdeditor.example.com",
+        "tags": ["工具", "编辑器", "Web"],
+        "status": "已上线"
+    }
+]

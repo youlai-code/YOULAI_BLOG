@@ -43,26 +43,22 @@
         <div class="marquee-wrap">
             <div class="marquee-content">加载中...</div>
         </div>
-        <a href="#" class="brand-logo" onclick="filterPosts('HOME'); return false;">YOULAI NOTE</a>
-        <div class="menu-list">
-            <a href="#" id="btn-home" class="menu-btn active" onclick="filterPosts('HOME'); return false;">首页</a>
-            <a href="/columns" id="btn-columns" class="menu-btn">专栏</a>
-            <a href="/message-board" id="btn-message-board" class="menu-btn">留言板</a>
-            <a href="#" id="btn-discovery" class="menu-btn" onclick="showDiscoveryPage(); return false;">发现</a>
-            <a href="#" id="btn-about" class="menu-btn" onclick="showAboutPage(); return false;">关于</a>
+        <div class="nav-left">
+            <a href="#" class="brand-logo" onclick="filterPosts('HOME'); return false;">YOULAI NOTE</a>
+        </div>
+        <div class="nav-right">
+            <div class="menu-list">
+                <a href="#" id="btn-home" class="menu-btn active" onclick="filterPosts('HOME'); return false;">首页</a>
+                <a href="/columns" id="btn-columns" class="menu-btn">专栏</a>
+                <a href="/message-board" id="btn-message-board" class="menu-btn">留言板</a>
+                <a href="#" id="btn-discovery" class="menu-btn" onclick="showDiscoveryPage(); return false;">发现</a>
+                <a href="#" id="btn-portfolio" class="menu-btn" onclick="showPortfolioPage(); return false;">作品集</a>
+                <a href="#" id="btn-about" class="menu-btn" onclick="showAboutPage(); return false;">关于</a>
+            </div>
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="搜索日志..." oninput="searchPosts(this.value)">
                 <i class="fas fa-search search-icon"></i>
             </div>
-
-            <a href="/editor.html" id="btn-write" class="menu-btn"
-                style="background:var(--p5-red); color:white; margin-left:20px; display:none;">
-                + WRITE
-            </a>
-            <a href="/admin.html" id="btn-admin" class="menu-btn"
-                style="background:var(--p5-black); color:var(--p5-yellow); margin-left:10px; display:none;">
-                ADMIN
-            </a>
         </div>
     </nav>
 
@@ -125,34 +121,96 @@
                     </div>
                 </div>
 
-                <div class="social-links" id="social-links-container"></div>
-                <div id="email-display" class="email-box" style="display:none;">
-                    <i class="fas fa-envelope"></i> <span id="email-text"></span>
+                <!-- 管理按钮 (仅管理员可见) -->
+                <div id="admin-buttons" style="display: none; margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="/editor.html" id="btn-write" class="admin-btn" style="flex:1; text-align:center; background:var(--p5-red); color:white; padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:0.9rem; border:2px solid var(--p5-white); border-radius:4px; transition:all 0.2s;">
+                        <i class="fas fa-pen"></i> 写文章
+                    </a>
+                    <a href="/admin.html" id="btn-admin" class="admin-btn" style="flex:1; text-align:center; background:var(--p5-black); color:var(--p5-yellow); padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:0.9rem; border:2px solid var(--p5-yellow); border-radius:4px; transition:all 0.2s;">
+                        <i class="fas fa-cog"></i> 管理
+                    </a>
                 </div>
             </div>
 
 
             <div class="widget-box">
-                <div class="widget-title">分类</div>
-                <div class="tag-cloud" style="margin-top: 15px;">
-                    <a href="#" class="tag-item" onclick="filterPosts('UNITY'); return false;"># UNITY3D</a>
-                    <a href="#" class="tag-item" onclick="filterPosts('CSHARP'); return false;"># CSHARP</a>
-                    <a href="#" class="tag-item" onclick="filterPosts('SHADER'); return false;"># SHADER</a>
-                    <a href="#" class="tag-item" onclick="filterPosts('MULTIPLAYER'); return false;"># MULTIPLAYER</a>
-                    <a href="#" class="tag-item" onclick="filterPosts('VR'); return false;"># VR/AR</a>
+                <div class="widget-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>分类</span>
+                    <button id="shuffle-tags-btn" onclick="renderCategoryTags(true)" style="display:none; background:transparent; color:var(--p5-yellow); border:1px solid var(--p5-yellow); padding:2px 8px; font-size:0.7rem; cursor:pointer; font-weight:bold; transition:all 0.2s;" onmouseover="this.style.background='var(--p5-yellow)';this.style.color='var(--p5-black)';" onmouseout="this.style.background='transparent';this.style.color='var(--p5-yellow)';"><i class="fas fa-random"></i> 换一批</button>
+                </div>
+                <div id="category-tags" class="tag-cloud" style="margin-top: 15px;">
+                    <span style="color: #aaa; font-size: 0.85rem;">加载中...</span>
+                </div>
+            </div>
+
+            <div class="widget-box">
+                <div class="widget-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>随机文章</span>
+                    <button id="shuffle-posts-btn" onclick="renderRandomPosts(true)" style="background:transparent; color:var(--p5-yellow); border:1px solid var(--p5-yellow); padding:2px 8px; font-size:0.7rem; cursor:pointer; font-weight:bold; transition:all 0.2s;" onmouseover="this.style.background='var(--p5-yellow)';this.style.color='var(--p5-black)';" onmouseout="this.style.background='transparent';this.style.color='var(--p5-yellow)';"><i class="fas fa-random"></i> 换一批</button>
+                </div>
+                <div id="random-posts" style="margin-top: 15px;">
+                    <span style="color: #aaa; font-size: 0.85rem;">加载中...</span>
                 </div>
             </div>
         </aside>
     </div>
 
     <footer class="footer-bar">
-        <div class="footer-info">
-            <div><span id="footer-copyright" style="font-weight:900; color:var(--p5-yellow);">© 2025 又来笔记.</span> 代码即世界.
+        <div class="footer-content">
+            <div class="footer-column">
+                <div class="footer-brand">
+                    <div class="brand-logo-footer">YOULAI NOTE</div>
+                    <div class="brand-tagline">代码即世界</div>
+                </div>
+                <div class="footer-about">
+                    YOULAI NOTE是一个专注于Unity3D、C#、Web全栈开发的个人技术博客。分享游戏开发经验、编程技巧和独立开发者的心路历程。
+                </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 8px;">
-                <a href="https://beian.miit.gov.cn/" style="font-size: 0.85rem; color: #aaa;">湘ICP备2026001893号</a>
-                <a href="https://beian.mps.gov.cn/#/query/webSearch?code=43010402002500" rel="noreferrer" target="_blank" style="font-size: 0.85rem; color: #aaa; display: flex; align-items: center; gap: 5px;">
-                    <img src="/img/备案图标.png" alt="" style="width: 18px; height: 18px;">
+            
+            <div class="footer-column">
+                <div class="footer-heading">网站导航</div>
+                <ul class="footer-links">
+                    <li><a href="#" onclick="filterPosts('HOME'); return false;">首页</a></li>
+                    <li><a href="/columns">专栏</a></li>
+                    <li><a href="/message-board">留言板</a></li>
+                    <li><a href="#" onclick="showPortfolioPage(); return false;">作品集</a></li>
+                    <li><a href="#" onclick="showAboutPage(); return false;">关于</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-column">
+                <div class="footer-heading">资源链接</div>
+                <ul class="footer-links">
+                    <li><a href="#" onclick="showDiscoveryPage(); return false;">发现</a></li>
+                    <li><a href="#" onclick="filterPosts('Unity3D'); return false;">Unity3D</a></li>
+                    <li><a href="#" onclick="filterPosts('C#'); return false;">C#</a></li>
+                    <li><a href="#" onclick="filterPosts('Web'); return false;">Web开发</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-column">
+                <div class="footer-heading">联系我们</div>
+                <div class="footer-contact">
+                    <div id="email-display" class="email-box" style="display:none;">
+                        <i class="fas fa-envelope"></i> <span id="email-text"></span>
+                    </div>
+                    <div class="footer-social-links">
+                        <div class="social-links" id="social-links-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <div class="footer-bottom-inner">
+                <span class="footer-copyright"><span id="footer-copyright" style="font-weight:900; color:var(--p5-yellow);">YOULAI NOTE</span> 2025 - 2026. All rights reserved.</span>
+                <span class="footer-divider">|</span>
+                <a href="#" onclick="showAboutPage(); return false;">关于我们</a>
+                <span class="footer-divider">|</span>
+                <a href="https://beian.miit.gov.cn/">湘ICP备2026001893号</a>
+                <span class="footer-divider">|</span>
+                <a href="https://beian.mps.gov.cn/#/query/webSearch?code=43010402002500" rel="noreferrer" target="_blank" class="footer-beian-link">
+                    <img src="/img/备案图标.png" alt="" style="width: 14px; height: 14px;">
                     湘公网安备43010402002500号
                 </a>
             </div>

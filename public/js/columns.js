@@ -2,6 +2,23 @@ function postUrl(id) {
     return `/posts/${encodeURIComponent(id)}`;
 }
 
+async function checkAdminAndInitButtons() {
+    try {
+        const cfgRes = await fetch('/config.json');
+        if (cfgRes.ok) {
+            const config = await cfgRes.json();
+            const isAdmin = config.features?.enableEditor === true || 
+                           localStorage.getItem('YOULAI_ADMIN') === 'true' || 
+                           Boolean(localStorage.getItem('YOULAI_ADMIN_TOKEN'));
+            
+            const adminButtons = document.getElementById('admin-buttons');
+            if (adminButtons) adminButtons.style.display = isAdmin ? 'flex' : 'none';
+        }
+    } catch (e) {
+        console.error('Failed to check admin status:', e);
+    }
+}
+
 function renderColumns(columns, posts) {
     const root = document.getElementById('columns-list');
     if (!root) return;
@@ -101,11 +118,8 @@ function renderColumns(columns, posts) {
 }
 
 async function init() {
-    const adminLink = document.getElementById('columns-admin-link');
-    if (adminLink && localStorage.getItem('YOULAI_ADMIN') === 'true') {
-        adminLink.style.display = 'inline-flex';
-    }
-
+    checkAdminAndInitButtons();
+    
     const root = document.getElementById('columns-list');
     if (root) {
         const loading = document.createElement('div');

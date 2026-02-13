@@ -7,45 +7,175 @@
     <title>管理后台 | 又来笔记</title>
     <meta name="description" content="管理后台：文章、留言审核、专栏等。">
     <link rel="icon" type="image/jpeg" href="/img/icon.png">
-    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/admin.css?v=8">
 </head>
 
 <body>
     <div class="wrap">
-        <header class="topbar">
-            <div class="topbar-left">
-                <div class="brand">YOULAI ADMIN</div>
-                <div class="muted">最简管理界面</div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand">又来笔记</div>
             </div>
-            <div class="topbar-right">
-                <a class="btn" href="/">回到主页</a>
-                <a class="btn" href="/editor.html">写文章</a>
-                <button id="btn-logout" class="btn btn-ghost" type="button">退出</button>
+            <nav class="sidebar-nav">
+                <ul class="sidebar-menu">
+                    <li class="sidebar-item">
+                        <button class="sidebar-link active" data-tab="dashboard" type="button">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            仪表盘
+                        </button>
+                    </li>
+                    <li class="sidebar-item">
+                        <button class="sidebar-link" data-tab="posts" type="button">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                            文章管理
+                        </button>
+                    </li>
+                    <li class="sidebar-item">
+                        <button class="sidebar-link" data-tab="comments" type="button">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            留言审核
+                        </button>
+                    </li>
+                    <li class="sidebar-item">
+                        <button class="sidebar-link" data-tab="columns" type="button">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            专栏管理
+                        </button>
+                    </li>
+                    <li class="sidebar-item">
+                        <button class="sidebar-link" data-tab="portfolio" type="button">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            作品集管理
+                        </button>
+                    </li>
+                    <li class="sidebar-item">
+                        <button class="sidebar-link" data-tab="settings" type="button">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            网站设置
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <a class="btn" href="/">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    返回主页
+                </a>
+                <button id="btn-logout" class="btn" type="button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    退出登录
+                </button>
             </div>
-        </header>
+        </aside>
 
-        <main>
-            <section id="login-panel" class="panel" style="display:none;">
-                <h2>登录</h2>
-                <div class="row">
-                    <input id="admin-password" type="password" class="input" placeholder="管理员密码">
-                    <button id="btn-login" class="btn btn-primary" type="button">登录</button>
-                </div>
-                <div id="login-status" class="status"></div>
-                <div class="muted" style="margin-top:10px;">密码来源优先使用服务端环境变量 `ADMIN_PASSWORD`，未配置时回退到 `public/config.json`。</div>
-            </section>
+        <section id="login-panel" class="panel" style="display:none;">
+            <h2>管理员登录</h2>
+            <div class="row">
+                <input id="admin-password" type="password" class="input" placeholder="输入管理员密码" autofocus>
+                <button id="btn-login" class="btn btn-primary" type="button">登录</button>
+            </div>
+            <div id="login-status" class="status"></div>
+            <p class="muted" style="margin-top:20px;">密码通过环境变量 ADMIN_PASSWORD 配置</p>
+        </section>
 
-            <section id="app-panel" style="display:none;">
-                <nav class="tabs">
-                    <button class="tab active" data-tab="posts" type="button">文章</button>
-                    <button class="tab" data-tab="comments" type="button">留言审核</button>
-                    <button class="tab" data-tab="columns" type="button">专栏</button>
-                    <button class="tab" data-tab="users" type="button">用户</button>
-                </nav>
+        <main class="main-content" id="app-panel" style="display:none;">
+            <header class="main-header">
+                <h1 id="page-title">文章管理</h1>
+                <div class="header-actions" id="header-actions"></div>
+            </header>
 
-                <section class="panel" data-panel="posts">
+            <div class="main-body">
+                <section class="panel" data-panel="dashboard">
                     <div class="panel-head">
-                        <h2>文章管理</h2>
+                        <h2>数据概览</h2>
+                        <div class="panel-actions">
+                            <button id="btn-refresh-dashboard" class="btn" type="button">刷新</button>
+                        </div>
+                    </div>
+                    <div id="dashboard-status" class="status"></div>
+                    
+                    <div class="dashboard-grid">
+                        <div class="stat-card-large">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="dash-total-posts">-</div>
+                                <div class="stat-label">文章总数</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-large">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="dash-total-columns">-</div>
+                                <div class="stat-label">专栏数量</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-large">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="dash-total-visits">-</div>
+                                <div class="stat-label">总访问量</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-large">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="dash-total-comments">-</div>
+                                <div class="stat-label">评论/留言</div>
+                            </div>
+                        </div>
+                        <div class="stat-card-large highlight">
+                            <div class="stat-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-value" id="dash-pending-comments">-</div>
+                                <div class="stat-label">待审核</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-charts">
+                        <div class="chart-card">
+                            <h3 class="subhead">文章发布趋势（近12个月）</h3>
+                            <div class="chart-container" id="posts-chart">
+                                <div class="chart-bars" id="chart-bars"></div>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3 class="subhead">专栏文章分布</h3>
+                            <div class="column-stats" id="column-stats"></div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-lists">
+                        <div class="list-card">
+                            <div class="list-head">
+                                <h3 class="subhead">最新文章</h3>
+                                <a class="btn btn-sm" href="/editor.html">新建</a>
+                            </div>
+                            <div class="list-body" id="recent-posts-list"></div>
+                        </div>
+                        <div class="list-card">
+                            <div class="list-head">
+                                <h3 class="subhead">最新评论</h3>
+                                <button class="btn btn-sm" type="button" data-goto="comments">查看全部</button>
+                            </div>
+                            <div class="list-body" id="recent-comments-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel" data-panel="posts" style="display:none;">
+                    <div class="panel-head">
+                        <h2>文章列表</h2>
                         <div class="panel-actions">
                             <a class="btn btn-primary" href="/editor.html">新建文章</a>
                             <button id="btn-refresh-posts" class="btn" type="button">刷新</button>
@@ -72,7 +202,7 @@
                     <div class="panel-head">
                         <h2>留言审核</h2>
                         <div class="panel-actions">
-                            <select id="comments-status" class="input" style="max-width: 180px;">
+                            <select id="comments-status" class="input">
                                 <option value="pending" selected>待审核</option>
                                 <option value="approved">已通过</option>
                                 <option value="rejected">已拒绝</option>
@@ -81,38 +211,43 @@
                         </div>
                     </div>
                     <div id="comments-status-text" class="status"></div>
+                    <div class="panel-body">
+                        <div class="comments-section">
+                            <h3 class="subhead">网站留言板</h3>
+                            <div class="table-wrap">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>时间</th>
+                                            <th>昵称</th>
+                                            <th>内容</th>
+                                            <th>联系方式</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="site-comments-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
 
-                    <h3 class="subhead">网站留言板</h3>
-                    <div class="table-wrap">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>时间</th>
-                                    <th>昵称</th>
-                                    <th>内容</th>
-                                    <th>联系方式</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="site-comments-tbody"></tbody>
-                        </table>
-                    </div>
-
-                    <h3 class="subhead" style="margin-top:22px;">文章留言</h3>
-                    <div class="table-wrap">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>文章ID</th>
-                                    <th>时间</th>
-                                    <th>昵称</th>
-                                    <th>内容</th>
-                                    <th>联系方式</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="post-comments-tbody"></tbody>
-                        </table>
+                        <div class="comments-section">
+                            <h3 class="subhead">文章留言</h3>
+                            <div class="table-wrap">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>文章ID</th>
+                                            <th>时间</th>
+                                            <th>昵称</th>
+                                            <th>内容</th>
+                                            <th>联系方式</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="post-comments-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -120,25 +255,210 @@
                     <div class="panel-head">
                         <h2>专栏管理</h2>
                         <div class="panel-actions">
-                            <a class="btn btn-primary" href="/columns-admin.html">打开专栏管理页</a>
+                            <button id="btn-add-column" class="btn btn-primary" type="button">新增专栏</button>
+                            <button id="btn-save-columns" class="btn" type="button">保存</button>
                             <a class="btn" href="/columns">查看专栏页</a>
                         </div>
                     </div>
-                    <div class="muted">专栏的新增/编辑/删除已放在专栏管理页，后台这里只做入口聚合。</div>
+                    <div id="columns-status" class="status"></div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>名称</th>
+                                    <th>描述</th>
+                                    <th>封面URL</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="columns-tbody"></tbody>
+                        </table>
+                    </div>
                 </section>
 
-                <section class="panel" data-panel="users" style="display:none;">
+                <section class="panel" data-panel="portfolio" style="display:none;">
                     <div class="panel-head">
-                        <h2>用户管理</h2>
+                        <h2>作品集管理</h2>
+                        <div class="panel-actions">
+                            <button id="btn-add-portfolio" class="btn btn-primary" type="button">新增作品</button>
+                            <button id="btn-save-portfolio" class="btn" type="button">保存</button>
+                        </div>
                     </div>
-                    <div class="muted">当前版本没有用户系统（登录仍是管理员密码 + token），后续如要做注册/权限分级再接入。</div>
+                    <div id="portfolio-status" class="status"></div>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>名称</th>
+                                    <th>描述</th>
+                                    <th>封面</th>
+                                    <th>链接</th>
+                                    <th>标签</th>
+                                    <th>状态</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="portfolio-tbody"></tbody>
+                        </table>
+                    </div>
                 </section>
-            </section>
+
+                <section class="panel" data-panel="settings" style="display:none;">
+                    <div class="panel-head">
+                        <h2>网站设置</h2>
+                        <div class="panel-actions">
+                            <button id="btn-save-settings" class="btn btn-primary" type="button">保存设置</button>
+                        </div>
+                    </div>
+                    <div id="settings-status" class="status"></div>
+                    <div class="panel-body">
+                        <div class="settings-grid">
+                            <div class="settings-section">
+                                <h3 class="subhead">博主信息</h3>
+                                <div class="form-row">
+                                    <label class="form-label">昵称</label>
+                                    <input id="cfg-owner-name" type="text" class="input" placeholder="博主昵称">
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">头衔</label>
+                                    <input id="cfg-owner-title" type="text" class="input" placeholder="如：独立开发者">
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">头像</label>
+                                    <div class="image-picker-field">
+                                        <div class="image-preview" id="avatar-preview">
+                                            <img src="" alt="头像预览">
+                                        </div>
+                                        <div class="image-picker-actions">
+                                            <input id="cfg-owner-avatar" type="text" class="input" placeholder="/img/head.jpg">
+                                            <button type="button" class="btn btn-select-image" data-target="cfg-owner-avatar" data-preview="avatar-preview">选择图片</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">个人简介</label>
+                                    <input id="cfg-owner-bio" type="text" class="input" placeholder="一句话介绍自己">
+                                </div>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3 class="subhead">社交链接</h3>
+                                <div class="form-row">
+                                    <label class="form-label">GitHub</label>
+                                    <input id="cfg-social-github" type="text" class="input" placeholder="https://github.com/xxx">
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">Bilibili</label>
+                                    <input id="cfg-social-bilibili" type="text" class="input" placeholder="https://space.bilibili.com/xxx">
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">QQ</label>
+                                    <input id="cfg-social-qq" type="text" class="input" placeholder="https://qm.qq.com/xxx">
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">邮箱</label>
+                                    <input id="cfg-social-email" type="text" class="input" placeholder="mailto:xxx@xxx.com">
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">抖音</label>
+                                    <input id="cfg-social-douyin" type="text" class="input" placeholder="抖音链接">
+                                </div>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3 class="subhead">页脚设置</h3>
+                                <div class="form-row">
+                                    <label class="form-label">版权信息</label>
+                                    <input id="cfg-footer-copyright" type="text" class="input" placeholder="YOULAI NOTE 2025 - 2026. All rights reserved.">
+                                </div>
+                                <div class="form-row">
+                                    <label class="form-label">滚动公告</label>
+                                    <input id="cfg-footer-marquee" type="text" class="input" placeholder="欢迎访问...">
+                                </div>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3 class="subhead">SEO 设置</h3>
+                                <div class="form-row">
+                                    <label class="form-label">站点 URL</label>
+                                    <input id="cfg-seo-siteurl" type="text" class="input" placeholder="https://yourdomain.com">
+                                </div>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3 class="subhead">数据统计</h3>
+                                <div class="stats-grid">
+                                    <div class="stat-card">
+                                        <div class="stat-value" id="stat-visits">-</div>
+                                        <div class="stat-label">访问量</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-value" id="stat-columns">-</div>
+                                        <div class="stat-label">专栏数</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-value" id="stat-site-comments">-</div>
+                                        <div class="stat-label">留言数</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-value" id="stat-post-comments">-</div>
+                                        <div class="stat-label">评论数</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-section">
+                                <h3 class="subhead">环境变量</h3>
+                                <p class="muted">以下配置在 .env 文件中设置，此处仅显示状态</p>
+                                <div class="env-grid">
+                                    <div class="env-item">
+                                        <span class="env-key">DEEPSEEK_API_KEY (AI文本)</span>
+                                        <span class="env-value" id="env-deepseek">-</span>
+                                    </div>
+                                    <div class="env-item">
+                                        <span class="env-key">DOUBAO_IMAGE (AI绘图)</span>
+                                        <span class="env-value" id="env-doubao-image">-</span>
+                                    </div>
+                                    <div class="env-item">
+                                        <span class="env-key">R2 图床</span>
+                                        <span class="env-value" id="env-r2">-</span>
+                                    </div>
+                                    <div class="env-item">
+                                        <span class="env-key">ADMIN_PASSWORD</span>
+                                        <span class="env-value" id="env-admin-pw">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
 
-    <script src="/js/admin.js"></script>
+    <div class="modal" id="image-picker-modal">
+        <div class="modal-content">
+            <div class="modal-head">
+                <h3>选择图片</h3>
+                <button type="button" class="modal-close" id="close-image-picker">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="image-upload-section">
+                    <label class="upload-btn">
+                        <input type="file" id="image-upload-input" accept="image/*" style="display:none">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        上传新图片
+                    </label>
+                    <span class="upload-status" id="upload-status"></span>
+                </div>
+                <div class="image-grid" id="image-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin.js?v=6"></script>
 </body>
 
 </html>
-
