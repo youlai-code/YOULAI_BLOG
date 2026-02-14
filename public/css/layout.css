@@ -288,20 +288,6 @@
     color: #aaa;
 }
 
-.email-box {
-    margin-bottom: 20px;
-    font-size: 0.9rem;
-}
-
-.email-box i {
-    margin-right: 10px;
-    color: var(--p5-yellow);
-}
-
-.footer-social-links {
-    margin-top: 20px;
-}
-
 .footer-bottom {
     max-width: 1200px;
     margin: 0 auto;

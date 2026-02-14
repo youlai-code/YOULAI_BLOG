@@ -58,20 +58,29 @@
     <div class="container">
         <div style="flex:3; display:flex; flex-direction:column;">
             <main class="content-area">
-                <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
+                <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black); width: 100%; box-sizing: border-box; max-width: none;">
                     <h1 style="margin-top:0;">网站留言板</h1>
                     <p style="margin-top:10px; color:#444;">文章留言会显示在对应文章底部；这里是全站留言。</p>
 
-                    <div class="comment-form" style="margin-top:18px;">
-                        <div class="comment-form-row">
-                            <div class="comment-field">
+                    <h3 style="margin-top:34px;">最新留言</h3>
+                    <div id="site-comments-list" class="comment-list" style="margin-top:12px;"></div>
+
+                    <div class="comment-form" style="margin-top:34px; padding-top:34px; border-top:2px dashed #ccc;">
+                        <h3 style="margin-bottom:18px;">发表留言</h3>
+                        <div class="comment-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%;">
+                            <div class="comment-field" style="width: 100%;">
                                 <div class="comment-label">昵称</div>
-                                <input id="site-comment-name" placeholder="匿名访客" class="comment-input">
+                                <div style="display: flex; position: relative; width: 100%;">
+                                    <input id="site-comment-name" placeholder="点击生成" class="comment-input" style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+                                    <button id="generate-name-btn" type="button" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--p5-yellow); color: var(--p5-black); border: 2px solid var(--p5-black); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 0 var(--p5-black); transition: all 0.2s;">
+                                        <i class="fas fa-random"></i>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div class="comment-field" style="margin-top:14px;">
-                            <div class="comment-label">联系方式（可选）</div>
-                            <input id="site-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input">
+                            <div class="comment-field" style="width: 100%;">
+                                <div class="comment-label">联系方式（可选）</div>
+                                <input id="site-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input" style="width: 100%; box-sizing: border-box;">
+                            </div>
                         </div>
                         <div class="comment-field" style="margin-top:14px;">
                             <div class="comment-label">留言内容</div>
@@ -83,9 +92,6 @@
                             <div id="site-comment-status" class="comment-status"></div>
                         </div>
                     </div>
-
-                    <h3 style="margin-top:34px;">最新留言</h3>
-                    <div id="site-comments-list" class="comment-list" style="margin-top:12px;"></div>
                 </div>
             </main>
         </div>
@@ -179,13 +185,50 @@
                 <span class="footer-divider">|</span>
                 <a href="https://beian.mps.gov.cn/#/query/webSearch?code=43010402002500" rel="noreferrer" target="_blank" class="footer-beian-link">
                     <img src="/img/备案图标.png" alt="" style="width: 14px; height: 14px;">
-                    湘公网安备43010402002500号
+                    湘公网备43010402002500号
                 </a>
             </div>
         </div>
     </footer>
 
     <script src="/js/message-board.js"></script>
+    <script>
+        // 生成昵称的函数
+        function generateRandomName() {
+            const adjectives = [
+                '可爱的', '邪恶的', '快乐的', '忧郁的', '勇敢的', '胆小的', '聪明的', '笨拙的',
+                '温柔的', '暴躁的', '神秘的', '阳光的', '酷酷的', '萌萌的', '机智的', '单纯的',
+                '帅气的', '美丽的', '强壮的', '苗条的', '善良的', '淘气的', '优雅的', '活泼的'
+            ];
+            const fruits = [
+                '菠萝', '哈密瓜', '苹果', '香蕉', '橙子', '草莓', '葡萄', '西瓜',
+                '桃子', '梨', '樱桃', '蓝莓', '芒果', '荔枝', '石榴', '猕猴桃',
+                '百香果', '柚子', '柠檬', '山竹', '榴莲', '火龙果', '椰子', '橄榄'
+            ];
+
+            const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const randomFruit = fruits[Math.floor(Math.random() * fruits.length)];
+            
+            return `${randomAdj}${randomFruit}`;
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 生成昵称按钮点击事件
+            const generateBtn = document.getElementById('generate-name-btn');
+            const nameInput = document.getElementById('site-comment-name');
+            
+            if (generateBtn && nameInput) {
+                generateBtn.addEventListener('click', function() {
+                    const randomName = generateRandomName();
+                    nameInput.value = randomName;
+                });
+                
+                // 页面加载时自动生成一个昵称
+                nameInput.value = generateRandomName();
+            }
+        });
+    </script>
 </body>
 
 </html>

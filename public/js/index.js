@@ -256,21 +256,8 @@ function applySiteConfig(config) {
 
         // 生成社交媒体图标
         container.innerHTML = '';
-        const emailBox = document.getElementById('email-display');
-        const emailText = document.getElementById('email-text');
 
         Object.entries(config.social).forEach(([key, social]) => {
-            // 特殊处理邮箱：显示为文本
-            if (key === 'email') {
-                if (emailBox && emailText) {
-                    emailBox.style.display = 'block';
-                    // 移除 mailto: 前缀显示
-                    const displayEmail = social.url.replace('mailto:', '');
-                    emailText.innerText = displayEmail;
-                }
-                return;
-            }
-
             const link = document.createElement('a');
             link.href = social.url;
             link.className = 'social-link';
@@ -337,7 +324,7 @@ function renderPage(page) {
 
         const prevBtn = document.createElement('button');
         prevBtn.className = 'page-btn';
-        prevBtn.innerText = 'PREV';
+        prevBtn.innerText = '上一页';
         prevBtn.disabled = currentPage <= 1;
         prevBtn.onclick = () => changePage(-1);
 
@@ -347,7 +334,7 @@ function renderPage(page) {
 
         const nextBtn = document.createElement('button');
         nextBtn.className = 'page-btn';
-        nextBtn.innerText = 'NEXT';
+        nextBtn.innerText = '下一页';
         nextBtn.disabled = currentPage >= totalPages;
         nextBtn.onclick = () => changePage(1);
 

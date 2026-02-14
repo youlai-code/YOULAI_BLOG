@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { asyncHandler, AppError } = require('../middlewares/errorHandler');
+const { requireAdmin } = require('../middlewares/auth');
 const commentsService = require('../services/comments.service');
 
 router.get('/site', asyncHandler(async (req, res) => {
@@ -10,6 +11,21 @@ router.get('/site', asyncHandler(async (req, res) => {
 
 router.post('/site', asyncHandler(async (req, res) => {
     await commentsService.addSiteComment({
+        name: req.body?.name,
+        contact: req.body?.contact,
+        content: req.body?.content
+    });
+    res.json({ success: true });
+}));
+
+router.post('/site/:commentId/reply', requireAdmin, asyncHandler(async (req, res) => {
+    const commentId = String(req.params.commentId || '').trim();
+    
+    if (!commentId) {
+        throw new AppError('NO_COMMENT_ID', 400);
+    }
+    
+    await commentsService.addSiteReply(commentId, {
         name: req.body?.name,
         contact: req.body?.contact,
         content: req.body?.content

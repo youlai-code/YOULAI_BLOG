@@ -205,19 +205,14 @@ body {
     clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
     transition: all 0.2s;
     position: relative;
+    transform: skewX(-10deg);
 }
 
 .menu-btn:hover {
     background: var(--p5-red);
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
-    overflow: hidden;
-    pointer-events: none;
-    background-color: #1a1a1a;
+    color: var(--p5-white);
+    transform: skewX(-10deg) scale(1.1) rotate(2deg);
+    z-index: 10;
 }
 
 /* 1. 流动的斜条纹 (The Phantom Stripes) */
@@ -388,19 +383,20 @@ body {
     clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%);
     transition: all 0.2s;
     position: relative;
+    transform: skewX(-10deg);
 }
 
 .menu-btn:hover {
     background: var(--p5-red);
     color: var(--p5-white);
-    transform: scale(1.1) rotate(2deg);
+    transform: skewX(-10deg) scale(1.1) rotate(2deg);
     z-index: 10;
 }
 
 .menu-btn.active {
     background: var(--p5-yellow);
     color: black;
-    transform: scale(1.05);
+    transform: skewX(-10deg) scale(1.05);
 }
 
 /* --- 布局 --- */
@@ -556,7 +552,7 @@ body {
     background: var(--p5-black);
     color: var(--p5-white);
     border: 2px solid var(--p5-white);
-    padding: 10px 30px;
+    padding: 10px 40px;
     font-size: 1.2rem;
     cursor: pointer;
     transform: skewX(-10deg);

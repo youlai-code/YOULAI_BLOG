@@ -18,7 +18,8 @@ async function getCommentsStore() {
             content: normalizeText(c?.content, 800),
             contact: normalizeText(c?.contact, 80),
             createdAt: c?.createdAt ? String(c.createdAt) : new Date().toISOString(),
-            status: ['pending', 'approved', 'rejected'].includes(status) ? status : 'approved'
+            status: ['pending', 'approved', 'rejected'].includes(status) ? status : 'approved',
+            replies: Array.isArray(c?.replies) ? c.replies : []
         };
     });
 
@@ -37,7 +38,8 @@ async function getCommentsStore() {
                 content: normalizeText(c?.content, 800),
                 contact: normalizeText(c?.contact, 80),
                 createdAt: c?.createdAt ? String(c.createdAt) : new Date().toISOString(),
-                status: ['pending', 'approved', 'rejected'].includes(status) ? status : 'approved'
+                status: ['pending', 'approved', 'rejected'].includes(status) ? status : 'approved',
+                replies: Array.isArray(c?.replies) ? c.replies : []
             };
         });
     });
@@ -62,7 +64,8 @@ async function getSiteComments(status = 'approved') {
             id: c.id,
             name: c.name,
             content: c.content,
-            createdAt: c.createdAt
+            createdAt: c.createdAt,
+            replies: c.replies || []
         }));
     }
     
@@ -83,7 +86,8 @@ async function addSiteComment(data) {
         content: normalizeText(content, 800),
         contact: normalizeText(contact, 80),
         createdAt: new Date().toISOString(),
-        status: 'pending'
+        status: 'pending',
+        replies: []
     };
     
     store.site = Array.isArray(store.site) ? store.site : [];
@@ -91,6 +95,45 @@ async function addSiteComment(data) {
     await saveCommentsStore(store);
     
     return item;
+}
+
+async function addSiteReply(commentId, data) {
+    const { name, contact, content } = data;
+    
+    if (!content || !content.trim()) {
+        throw new Error('EMPTY_CONTENT');
+    }
+    if (!commentId) {
+        throw new Error('NO_COMMENT_ID');
+    }
+
+    const store = await getCommentsStore();
+    store.site = Array.isArray(store.site) ? store.site : [];
+    
+    let found = false;
+    store.site = store.site.map(c => {
+        if (c.id !== commentId) return c;
+        found = true;
+        const replies = Array.isArray(c.replies) ? c.replies : [];
+        return {
+            ...c,
+            replies: [...replies, {
+                id: generateId('reply'),
+                name: normalizeText(name, 24) || '匿名访客',
+                content: normalizeText(content, 800),
+                contact: normalizeText(contact, 80),
+                createdAt: new Date().toISOString(),
+                status: 'pending'
+            }]
+        };
+    });
+    
+    if (!found) {
+        throw new Error('NOT_FOUND');
+    }
+    
+    await saveCommentsStore(store);
+    return true;
 }
 
 async function getPostComments(postId, status = 'approved') {
@@ -142,7 +185,7 @@ async function addPostComment(postId, data) {
     return item;
 }
 
-async function moderateComment(scope, commentId, action, postId = null) {
+async function moderateComment(scope, commentId, action, postId = null, replyId = null) {
     if (!['site', 'post'].includes(scope)) {
         throw new Error('INVALID_SCOPE');
     }
@@ -187,6 +230,44 @@ async function moderateComment(scope, commentId, action, postId = null) {
     return true;
 }
 
+async function moderateSiteReply(commentId, replyId, action) {
+    if (!['approve', 'reject', 'delete'].includes(action)) {
+        throw new Error('INVALID_ACTION');
+    }
+    if (!commentId || !replyId) {
+        throw new Error('NO_COMMENT_ID');
+    }
+
+    const store = await getCommentsStore();
+    store.site = Array.isArray(store.site) ? store.site : [];
+    
+    let commentFound = false;
+    let replyFound = false;
+    
+    store.site = store.site.map(c => {
+        if (c.id !== commentId) return c;
+        commentFound = true;
+        const replies = Array.isArray(c.replies) ? c.replies : [];
+        
+        const filteredReplies = replies.map(r => {
+            if (r.id !== replyId) return r;
+            replyFound = true;
+            if (action === 'approve') return { ...r, status: 'approved' };
+            if (action === 'reject') return { ...r, status: 'rejected' };
+            return r;
+        }).filter(r => !(replyFound && action === 'delete' && r.id === replyId));
+        
+        return { ...c, replies: filteredReplies };
+    });
+    
+    if (!commentFound || !replyFound) {
+        throw new Error('NOT_FOUND');
+    }
+    
+    await saveCommentsStore(store);
+    return true;
+}
+
 async function getAdminComments(scope = 'all', status = 'pending', postId = null) {
     const store = await getCommentsStore();
     const statuses = ['pending', 'approved', 'rejected'];
@@ -213,8 +294,10 @@ module.exports = {
     saveCommentsStore,
     getSiteComments,
     addSiteComment,
+    addSiteReply,
     getPostComments,
     addPostComment,
     moderateComment,
+    moderateSiteReply,
     getAdminComments
 };
