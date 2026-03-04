@@ -271,7 +271,7 @@
     </div>
 
     <nav class="mini-nav">
-        <a href="/" class="home-btn"><span>◄ 又来笔记</span></a>
+        <a href="/" class="home-btn"><span>< 返回主页</span></a>
     </nav>
 
     <div id="error-container" style="display:none;"></div>
@@ -285,26 +285,30 @@
         <main class="article-main">
             <div id="content-render-area" class="markdown-body"></div>
             <section id="post-comments" style="margin-top: 40px; display:none;">
-                <h2 style="margin: 0 0 12px;">文章留言</h2>
-                <div class="comment-form">
-                    <div class="comment-form-row">
-                        <div class="comment-field">
+                <div class="comment-form" style="margin-top:34px; padding-top:34px; border-top:2px dashed #ccc;">
+                    <h3 style="margin-bottom:18px;">发表留言</h3>
+                    <div class="comment-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%;">
+                        <div class="comment-field" style="width: 100%;">
                             <div class="comment-label">昵称</div>
-                            <input id="post-comment-name" placeholder="匿名访客" class="comment-input">
+                            <div style="display: flex; position: relative; width: 100%;">
+                                <input id="post-comment-name" placeholder="点击生成" class="comment-input" style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+                                <button id="generate-post-name-btn" type="button" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--p5-yellow); color: var(--p5-black); border: 2px solid var(--p5-black); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 0 var(--p5-black); transition: all 0.2s;">
+                                    <i class="fas fa-random"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="comment-field" style="width: 100%;">
+                            <div class="comment-label">联系方式（可选）</div>
+                            <input id="post-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input" style="width: 100%; box-sizing: border-box;">
                         </div>
                     </div>
-                    <div class="comment-field" style="margin-top: 14px;">
-                        <div class="comment-label">联系方式（可选）</div>
-                        <input id="post-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input">
-                    </div>
-                    <div class="comment-field" style="margin-top: 14px;">
+                    <div class="comment-field" style="margin-top:14px;">
                         <div class="comment-label">留言内容</div>
                         <textarea id="post-comment-content" rows="5" placeholder="写下你的想法..." class="comment-textarea"></textarea>
                     </div>
-                    <div class="comment-actions" style="margin-top: 14px;">
-                        <button id="post-comment-submit" class="post-comment-btn" type="button">提交</button>
-                        <a class="post-comment-btn" href="/message-board" style="background: var(--p5-white);">网站留言板</a>
-                        <div id="post-comment-status" class="comment-status"></div>
+                    <div class="comment-actions" style="margin-top:14px; justify-content: flex-end;">
+                        <div id="post-comment-status" class="comment-status" style="margin-right: auto;"></div>
+                        <button id="post-comment-submit" class="p5-cta-btn" type="button">提交</button>
                     </div>
                 </div>
                 <div id="post-comments-list" class="comment-list" style="margin-top: 18px;"></div>
@@ -441,6 +445,24 @@
                 });
 
             // --- 辅助工具 ---
+            function generateRandomName() {
+                const adjectives = [
+                    '可爱的', '邪恶的', '快乐的', '忧郁的', '勇敢的', '胆小的', '聪明的', '笨拙的',
+                    '温柔的', '暴躁的', '神秘的', '阳光的', '酷酷的', '萌萌的', '机智的', '单纯的',
+                    '帅气的', '美丽的', '强壮的', '苗条的', '善良的', '淘气的', '优雅的', '活泼的'
+                ];
+                const fruits = [
+                    '菠萝', '哈密瓜', '苹果', '香蕉', '橙子', '草莓', '葡萄', '西瓜',
+                    '桃子', '梨', '樱桃', '蓝莓', '芒果', '荔枝', '石榴', '猕猴桃',
+                    '百香果', '柚子', '柠檬', '山竹', '榴莲', '火龙果', '椰子', '橄榄'
+                ];
+
+                const randomAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
+                const randomFruit = fruits[Math.floor(Math.random() * fruits.length)];
+                
+                return `${randomAdj}${randomFruit}`;
+            }
+
             function showError(msg) {
                 loadingScreen.style.display = 'none';
                 errorContainer.style.display = 'block';
@@ -615,6 +637,20 @@
                 if (wrap) wrap.style.display = 'block';
                 const btn = document.getElementById('post-comment-submit');
                 if (btn) btn.addEventListener('click', () => submitPostComment(pid));
+                
+                // 初始化随机昵称
+                const generateBtn = document.getElementById('generate-post-name-btn');
+                const nameInput = document.getElementById('post-comment-name');
+                if (generateBtn && nameInput) {
+                    generateBtn.addEventListener('click', function() {
+                        nameInput.value = generateRandomName();
+                    });
+                    // 默认生成一个
+                    if (!nameInput.value) {
+                         nameInput.value = generateRandomName();
+                    }
+                }
+
                 loadPostComments(pid);
             }
         });

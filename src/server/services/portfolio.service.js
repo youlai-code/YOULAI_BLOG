@@ -1,11 +1,7 @@
-const { readJsonFileSafe, writeJsonFileAtomic } = require('../utils/jsonFile');
-const path = require('path');
-
-const PORTFOLIO_FILE = path.join(__dirname, '../../../public/portfolio.json');
+const configService = require('./config.service');
 
 async function getPortfolio() {
-    const items = await readJsonFileSafe(PORTFOLIO_FILE, []);
-    return Array.isArray(items) ? items : [];
+    return await configService.getPortfolio();
 }
 
 async function savePortfolio(items) {
@@ -26,7 +22,7 @@ async function savePortfolio(items) {
         })
         .filter(item => item.id && item.name);
 
-    await writeJsonFileAtomic(PORTFOLIO_FILE, normalized);
+    await configService.savePortfolio(normalized);
     return normalized;
 }
 

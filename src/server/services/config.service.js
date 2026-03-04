@@ -1,12 +1,9 @@
 const fs = require('fs').promises;
 const path = require('path');
+const db = require('../db');
 
-const PUBLIC_DIR = path.join(__dirname, '../../public');
 const DATA_DIR = path.join(__dirname, '../../data');
-const CONFIG_FILE = path.join(PUBLIC_DIR, 'config.json');
-const COLUMNS_FILE = path.join(PUBLIC_DIR, 'columns.json');
 const COMMENTS_FILE = path.join(DATA_DIR, 'comments.json');
-const VISITS_FILE = path.join(DATA_DIR, 'visits.json');
 const ENV_FILE = path.join(__dirname, '../../.env');
 
 async function readJsonFile(filePath, defaultValue) {
@@ -28,19 +25,54 @@ async function writeJsonFile(filePath, data) {
 }
 
 async function getConfig() {
-    return await readJsonFile(CONFIG_FILE, {});
+    try {
+        const row = db.prepare('SELECT value FROM config WHERE key = ?').get('site_config');
+        if (row && row.value) {
+            return JSON.parse(row.value);
+        }
+    } catch (e) {
+        console.error('DB Error getConfig:', e);
+    }
+    return {};
 }
 
 async function saveConfig(config) {
-    await writeJsonFile(CONFIG_FILE, config);
+    const value = JSON.stringify(config);
+    db.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)').run('site_config', value);
 }
 
 async function getColumns() {
-    return await readJsonFile(COLUMNS_FILE, []);
+    try {
+        const row = db.prepare('SELECT value FROM config WHERE key = ?').get('columns');
+        if (row && row.value) {
+            return JSON.parse(row.value);
+        }
+    } catch (e) {
+        console.error('DB Error getColumns:', e);
+    }
+    return [];
 }
 
 async function saveColumns(columns) {
-    await writeJsonFile(COLUMNS_FILE, columns);
+    const value = JSON.stringify(columns);
+    db.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)').run('columns', value);
+}
+
+async function getPortfolio() {
+    try {
+        const row = db.prepare('SELECT value FROM config WHERE key = ?').get('portfolio');
+        if (row && row.value) {
+            return JSON.parse(row.value);
+        }
+    } catch (e) {
+        console.error('DB Error getPortfolio:', e);
+    }
+    return [];
+}
+
+async function savePortfolio(items) {
+    const value = JSON.stringify(items);
+    db.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)').run('portfolio', value);
 }
 
 async function getComments() {
@@ -48,7 +80,23 @@ async function getComments() {
 }
 
 async function getVisits() {
-    return await readJsonFile(VISITS_FILE, { count: 0 });
+    try {
+        const row = db.prepare('SELECT count FROM visits WHERE id = 1').get();
+        return { count: row ? row.count : 0 };
+    } catch (e) {
+        console.error('DB Error getVisits:', e);
+        return { count: 0 };
+    }
+}
+
+async function incrementVisit() {
+    try {
+        db.prepare('UPDATE visits SET count = count + 1 WHERE id = 1').run();
+        return await getVisits();
+    } catch (e) {
+        console.error('DB Error incrementVisit:', e);
+        return { count: 0 };
+    }
 }
 
 async function getEnvTemplate() {
@@ -147,8 +195,11 @@ module.exports = {
     saveConfig,
     getColumns,
     saveColumns,
+    getPortfolio,
+    savePortfolio,
     getComments,
     getVisits,
+    incrementVisit,
     getEnvTemplate,
     normalizeConfig
 };

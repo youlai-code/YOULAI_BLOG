@@ -122,11 +122,19 @@
                 </div>
 
                 <!-- 管理按钮 (仅管理员可见) -->
-                <div id="admin-buttons" style="display: none; margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="/editor.html" id="btn-write" class="admin-btn" style="flex:1; text-align:center; background:var(--p5-red); color:white; padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:0.9rem; border:2px solid var(--p5-white); border-radius:4px; transition:all 0.2s;">
+                <div id="admin-buttons" style="display: none; margin-top: 15px; display: flex; gap: 15px; flex-wrap: wrap;">
+                    <a href="/editor.html" id="btn-write" class="admin-btn" 
+                       style="flex:1; text-align:center; background:var(--p5-red); color:white; padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:1rem; border:3px solid var(--p5-white); box-shadow:4px 4px 0 var(--p5-white); transition:all 0.2s;"
+                       onmouseover="this.style.transform='translate(-2px, -2px)'; this.style.boxShadow='6px 6px 0 var(--p5-white)';"
+                       onmouseout="this.style.transform='translate(0, 0)'; this.style.boxShadow='4px 4px 0 var(--p5-white)';"
+                    >
                         <i class="fas fa-pen"></i> 写文章
                     </a>
-                    <a href="/admin.html" id="btn-admin" class="admin-btn" style="flex:1; text-align:center; background:var(--p5-black); color:var(--p5-yellow); padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:0.9rem; border:2px solid var(--p5-yellow); border-radius:4px; transition:all 0.2s;">
+                    <a href="/admin.html" id="btn-admin" class="admin-btn" 
+                       style="flex:1; text-align:center; background:var(--p5-black); color:var(--p5-yellow); padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:1rem; border:3px solid var(--p5-yellow); box-shadow:4px 4px 0 var(--p5-yellow); transition:all 0.2s;"
+                       onmouseover="this.style.transform='translate(-2px, -2px)'; this.style.boxShadow='6px 6px 0 var(--p5-yellow)';"
+                       onmouseout="this.style.transform='translate(0, 0)'; this.style.boxShadow='4px 4px 0 var(--p5-yellow)';"
+                    >
                         <i class="fas fa-cog"></i> 管理
                     </a>
                 </div>
@@ -163,7 +171,7 @@
                     <div class="brand-tagline">代码即世界</div>
                 </div>
                 <div class="footer-about">
-                    YOULAI NOTE是一个专注于Unity3D、C#、Web全栈开发的个人技术博客。分享游戏开发经验、编程技巧和独立开发者的心路历程。
+                    专注于全栈开发与个人风格探索。分享开发经验，记录生活点滴。
                 </div>
             </div>
             

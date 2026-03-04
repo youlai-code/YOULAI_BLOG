@@ -93,7 +93,7 @@
             <div class="main-body">
                 <section class="panel" data-panel="dashboard">
                     <div class="panel-head">
-                        <h2>数据概览</h2>
+                        <h2>仪表盘</h2>
                         <div class="panel-actions">
                             <button id="btn-refresh-dashboard" class="btn" type="button">刷新</button>
                         </div>
@@ -101,7 +101,7 @@
                     <div id="dashboard-status" class="status"></div>
                     
                     <div class="dashboard-grid">
-                        <div class="stat-card-large">
+                        <div class="stat-card-modern">
                             <div class="stat-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
                             </div>
@@ -110,7 +110,7 @@
                                 <div class="stat-label">文章总数</div>
                             </div>
                         </div>
-                        <div class="stat-card-large">
+                        <div class="stat-card-modern">
                             <div class="stat-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                             </div>
@@ -119,7 +119,7 @@
                                 <div class="stat-label">专栏数量</div>
                             </div>
                         </div>
-                        <div class="stat-card-large">
+                        <div class="stat-card-modern">
                             <div class="stat-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </div>
@@ -128,53 +128,27 @@
                                 <div class="stat-label">总访问量</div>
                             </div>
                         </div>
-                        <div class="stat-card-large">
-                            <div class="stat-icon">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                            </div>
-                            <div class="stat-info">
-                                <div class="stat-value" id="dash-total-comments">-</div>
-                                <div class="stat-label">评论/留言</div>
-                            </div>
-                        </div>
-                        <div class="stat-card-large highlight">
+                        <div class="stat-card-modern highlight">
                             <div class="stat-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             </div>
                             <div class="stat-info">
                                 <div class="stat-value" id="dash-pending-comments">-</div>
-                                <div class="stat-label">待审核</div>
+                                <div class="stat-label">待审核留言</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="dashboard-charts">
-                        <div class="chart-card">
-                            <h3 class="subhead">文章发布趋势（近12个月）</h3>
-                            <div class="chart-container" id="posts-chart">
-                                <div class="chart-bars" id="chart-bars"></div>
-                            </div>
+                    <div class="dashboard-content-row">
+                        <div class="chart-card-modern">
+                            <h3 class="subhead">内容发布趋势</h3>
+                            <div class="chart-container" id="main-chart" style="height: 300px; width: 100%; position: relative;"></div>
                         </div>
-                        <div class="chart-card">
-                            <h3 class="subhead">专栏文章分布</h3>
-                            <div class="column-stats" id="column-stats"></div>
-                        </div>
-                    </div>
-
-                    <div class="dashboard-lists">
-                        <div class="list-card">
-                            <div class="list-head">
-                                <h3 class="subhead">最新文章</h3>
-                                <a class="btn btn-sm" href="/editor.html">新建</a>
+                        <div class="chart-card-modern">
+                            <h3 class="subhead">最新动态</h3>
+                            <div class="timeline-modern" id="activity-timeline">
+                                <!-- Timeline items injected by JS -->
                             </div>
-                            <div class="list-body" id="recent-posts-list"></div>
-                        </div>
-                        <div class="list-card">
-                            <div class="list-head">
-                                <h3 class="subhead">最新评论</h3>
-                                <button class="btn btn-sm" type="button" data-goto="comments">查看全部</button>
-                            </div>
-                            <div class="list-body" id="recent-comments-list"></div>
                         </div>
                     </div>
                 </section>
@@ -209,6 +183,7 @@
                         <h2>留言审核</h2>
                         <div class="panel-actions">
                             <select id="comments-status" class="input">
+                                <option value="all">全部状态</option>
                                 <option value="pending" selected>待审核</option>
                                 <option value="approved">已通过</option>
                                 <option value="rejected">已拒绝</option>
@@ -218,41 +193,8 @@
                     </div>
                     <div id="comments-status-text" class="status"></div>
                     <div class="panel-body">
-                        <div class="comments-section">
-                            <h3 class="subhead">网站留言板</h3>
-                            <div class="table-wrap">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>时间</th>
-                                            <th>昵称</th>
-                                            <th>内容</th>
-                                            <th>联系方式</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="site-comments-tbody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="comments-section">
-                            <h3 class="subhead">文章留言</h3>
-                            <div class="table-wrap">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>文章ID</th>
-                                            <th>时间</th>
-                                            <th>昵称</th>
-                                            <th>内容</th>
-                                            <th>联系方式</th>
-                                            <th>操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="post-comments-tbody"></tbody>
-                                </table>
-                            </div>
+                        <div id="comments-list-container">
+                            <!-- Modern Comment Cards will be injected here -->
                         </div>
                     </div>
                 </section>
@@ -267,20 +209,7 @@
                         </div>
                     </div>
                     <div id="columns-status" class="status"></div>
-                    <div class="table-wrap">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>名称</th>
-                                    <th>描述</th>
-                                    <th>封面URL</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="columns-tbody"></tbody>
-                        </table>
-                    </div>
+                    <div id="columns-grid" class="card-grid"></div>
                 </section>
 
                 <section class="panel" data-panel="portfolio" style="display:none;">
@@ -292,23 +221,7 @@
                         </div>
                     </div>
                     <div id="portfolio-status" class="status"></div>
-                    <div class="table-wrap">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>名称</th>
-                                    <th>描述</th>
-                                    <th>封面</th>
-                                    <th>链接</th>
-                                    <th>标签</th>
-                                    <th>状态</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="portfolio-tbody"></tbody>
-                        </table>
-                    </div>
+                    <div id="portfolio-grid" class="card-grid"></div>
                 </section>
 
                 <section class="panel" data-panel="settings" style="display:none;">
@@ -333,14 +246,13 @@
                                 </div>
                                 <div class="form-row">
                                     <label class="form-label">头像</label>
-                                    <div class="image-picker-field">
-                                        <div class="image-preview" id="avatar-preview">
-                                            <img src="" alt="头像预览">
+                                    <div class="avatar-uploader" id="avatar-uploader">
+                                        <img id="cfg-owner-avatar-img" src="" alt="头像" onerror="this.src='/img/default-avatar.png'">
+                                        <div class="avatar-overlay">
+                                            <span>更换头像</span>
                                         </div>
-                                        <div class="image-picker-actions">
-                                            <input id="cfg-owner-avatar" type="text" class="input" placeholder="/img/head.jpg">
-                                            <button type="button" class="btn btn-select-image" data-target="cfg-owner-avatar" data-preview="avatar-preview">选择图片</button>
-                                        </div>
+                                        <input type="file" id="avatar-file-input" accept="image/*" style="display:none">
+                                        <input type="hidden" id="cfg-owner-avatar">
                                     </div>
                                 </div>
                                 <div class="form-row">

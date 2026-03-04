@@ -5,11 +5,11 @@ const fs = require('fs');
 const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler');
 const { requireAdmin } = require('./middlewares/auth');
 const postsService = require('./services/posts.service');
+const configService = require('./services/config.service');
 const { isValidPostId } = require('./utils/paths');
 
 const PUBLIC_DIR = path.join(__dirname, '../../public');
 const DATA_DIR = path.join(__dirname, '../../data');
-const VISIT_FILE = path.join(DATA_DIR, 'visits.json');
 
 function createApp() {
     const app = express();
@@ -35,6 +35,16 @@ function createApp() {
         }
     });
 
+    app.get('/config.json', async (req, res) => {
+        try {
+            const config = await configService.getConfig();
+            res.json(config);
+        } catch (e) {
+            console.error('Failed to get config:', e);
+            res.status(500).json({});
+        }
+    });
+
     app.use(express.static(PUBLIC_DIR));
 
     app.get('/posts.json', (req, res) => {
@@ -49,8 +59,16 @@ function createApp() {
         res.send(xml);
     });
 
-    app.get('/config.json', (req, res) => {
-        res.sendFile(path.join(PUBLIC_DIR, 'config.json'));
+
+
+    app.get('/portfolio.json', async (req, res) => {
+        try {
+            const portfolio = await configService.getPortfolio();
+            res.json(portfolio);
+        } catch (e) {
+            console.error('Failed to get portfolio:', e);
+            res.status(500).json([]);
+        }
     });
 
     app.get(['/columns', '/columns/'], (req, res) => {
@@ -114,23 +132,14 @@ function createApp() {
 
     app.use('/posts', express.static(path.join(PUBLIC_DIR, 'posts')));
 
-    app.get('/api/visit', (req, res) => {
-        fs.readFile(VISIT_FILE, 'utf8', (err, data) => {
-            let count = 0;
-            if (!err && data) {
-                try {
-                    count = JSON.parse(data).count || 0;
-                } catch (e) {}
-            }
-            
-            count++;
-            
-            fs.writeFile(VISIT_FILE, JSON.stringify({ count }), (err) => {
-                if (err) console.error('Write visit file failed:', err);
-            });
-            
-            res.json({ count });
-        });
+    app.get('/api/visit', async (req, res) => {
+        try {
+            const stats = await configService.incrementVisit();
+            res.json(stats);
+        } catch (e) {
+            console.error('Failed to increment visit:', e);
+            res.status(500).json({ count: 0 });
+        }
     });
 
     app.use(notFoundHandler);

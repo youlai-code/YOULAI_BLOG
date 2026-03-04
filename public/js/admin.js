@@ -198,82 +198,175 @@ async function deletePost(id) {
     }
 }
 
-function commentRow(c, scope) {
-    const tr = document.createElement('tr');
-
-    const cols = [];
-    if (scope === 'post') {
-        const tdPid = document.createElement('td');
-        tdPid.className = 'mono';
-        tdPid.textContent = c.postId;
-        cols.push(tdPid);
+function buildCommentCard(c) {
+    const card = document.createElement('div');
+    card.className = 'comment-card-modern';
+    
+    // Avatar (Initials)
+    const avatar = document.createElement('div');
+    avatar.className = 'comment-avatar';
+    avatar.textContent = (c.name || '?').charAt(0).toUpperCase();
+    
+    // Main Content
+    const main = document.createElement('div');
+    main.className = 'comment-main';
+    
+    // Header
+    const header = document.createElement('div');
+    header.className = 'comment-header';
+    
+    const userInfo = document.createElement('div');
+    userInfo.className = 'comment-user-info';
+    
+    const authorLine = document.createElement('div');
+    authorLine.style.display = 'flex';
+    authorLine.style.alignItems = 'center';
+    authorLine.style.gap = '8px';
+    
+    const author = document.createElement('span');
+    author.className = 'comment-author';
+    author.textContent = c.name;
+    
+    // Status Badge
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'pill';
+    statusBadge.style.fontSize = '11px';
+    if (c.status === 'approved') {
+        statusBadge.textContent = '已通过';
+        statusBadge.style.color = 'var(--success)';
+        statusBadge.style.background = '#dcfce7';
+    } else if (c.status === 'rejected') {
+        statusBadge.textContent = '已拒绝';
+        statusBadge.style.color = 'var(--danger)';
+        statusBadge.style.background = '#fee2e2';
+    } else {
+        statusBadge.textContent = '待审核';
+        statusBadge.style.color = 'var(--warning)';
+        statusBadge.style.background = '#fef3c7';
     }
-
-    const tdTime = document.createElement('td');
-    tdTime.textContent = formatDateTime(c.createdAt);
-
-    const tdName = document.createElement('td');
-    tdName.textContent = c.name;
-
-    const tdContent = document.createElement('td');
-    tdContent.textContent = c.content;
-
-    const tdContact = document.createElement('td');
-    tdContact.textContent = c.contact || '';
-
-    const tdActions = document.createElement('td');
-    const approveBtn = buildBtn('通过', 'btn-primary', () => moderateComment(scope, c, 'approve'));
-    const rejectBtn = buildBtn('拒绝', '', () => moderateComment(scope, c, 'reject'));
-    const delBtn = buildBtn('删除', 'btn-danger', () => moderateComment(scope, c, 'delete'));
-    tdActions.appendChild(buildActionButtons([approveBtn, rejectBtn, delBtn]));
-
-    cols.push(tdTime, tdName, tdContent, tdContact, tdActions);
-    cols.forEach(td => tr.appendChild(td));
-    return tr;
+    
+    authorLine.append(author, statusBadge);
+    
+    const time = document.createElement('span');
+    time.className = 'comment-time';
+    time.textContent = formatDateTime(c.createdAt) + (c.contact ? ` • ${c.contact}` : '');
+    
+    userInfo.append(authorLine, time);
+    
+    // Context (Source)
+    const context = document.createElement('div');
+    context.className = 'comment-context';
+    context.textContent = c._scope === 'site' ? '留言板' : `文章: ${c.postId}`;
+    if (c._scope === 'post') {
+        context.style.cursor = 'pointer';
+        context.onclick = () => window.open(`/posts/${encodeURIComponent(c.postId)}`, '_blank');
+    }
+    
+    header.append(userInfo, context);
+    
+    // Content Text
+    const text = document.createElement('div');
+    text.className = 'comment-text collapsed';
+    text.textContent = c.content;
+    
+    // Toggle Read More
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'btn-text';
+    toggleBtn.textContent = '展开全文';
+    toggleBtn.style.display = 'none';
+    
+    // Check text length
+    if (c.content && c.content.length > 100) {
+        toggleBtn.style.display = 'inline-block';
+        toggleBtn.onclick = () => {
+            if (text.classList.contains('collapsed')) {
+                text.classList.remove('collapsed');
+                toggleBtn.textContent = '收起';
+            } else {
+                text.classList.add('collapsed');
+                toggleBtn.textContent = '展开全文';
+            }
+        };
+    } else {
+        text.classList.remove('collapsed');
+    }
+    
+    // Actions
+    const actions = document.createElement('div');
+    actions.className = 'comment-actions';
+    
+    const createActionBtn = (icon, cls, title, onClick) => {
+        const btn = document.createElement('button');
+        btn.className = `action-btn ${cls}`;
+        btn.title = title;
+        btn.innerHTML = icon;
+        btn.onclick = onClick;
+        return btn;
+    };
+    
+    if (c.status !== 'approved') {
+        actions.appendChild(createActionBtn(
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+            'approve', '通过',
+            () => moderateComment(c._scope, c, 'approve')
+        ));
+    }
+    
+    if (c.status !== 'rejected') {
+        actions.appendChild(createActionBtn(
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+            'reject', '拒绝',
+            () => moderateComment(c._scope, c, 'reject')
+        ));
+    }
+    
+    actions.appendChild(createActionBtn(
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+        'delete', '删除',
+        () => {
+            if (confirm('确定删除该留言？')) moderateComment(c._scope, c, 'delete');
+        }
+    ));
+    
+    main.append(header, text, toggleBtn, actions);
+    card.append(avatar, main);
+    
+    return card;
 }
 
 async function loadComments() {
     const status = (document.getElementById('comments-status')?.value || 'pending').toString();
     setStatus('comments-status-text', '加载中...');
 
-    const siteBody = document.getElementById('site-comments-tbody');
-    const postBody = document.getElementById('post-comments-tbody');
-    if (siteBody) siteBody.innerHTML = '';
-    if (postBody) postBody.innerHTML = '';
+    const container = document.getElementById('comments-list-container');
+    if (container) container.innerHTML = '';
 
     try {
-        const res = await api(`/api/admin/comments?scope=all&status=${encodeURIComponent(status)}`);
+        // Handle "all" status by sending empty string if API supports it, or check backend logic.
+        // Assuming backend treats empty status as "all" or we need to send specific query.
+        // If backend is strictly filtering, we might need to handle 'all' specially.
+        // For now, let's try sending the status value directly, but if it's 'all', we send empty.
+        const queryStatus = status === 'all' ? '' : status;
+        
+        const res = await api(`/api/admin/comments?scope=all&status=${encodeURIComponent(queryStatus)}`);
         const data = await res.json();
         if (!res.ok || !data?.success) throw new Error(data?.message || 'FAILED');
 
         const site = Array.isArray(data.data?.site) ? data.data.site : [];
         const posts = Array.isArray(data.data?.posts) ? data.data.posts : [];
+        
+        // Merge and sort
+        const allComments = [
+            ...site.map(c => ({...c, _scope: 'site'})), 
+            ...posts.map(c => ({...c, _scope: 'post'}))
+        ];
+        allComments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        if (siteBody) {
-            if (site.length === 0) {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.colSpan = 5;
-                td.className = 'muted';
-                td.textContent = '暂无数据';
-                tr.appendChild(td);
-                siteBody.appendChild(tr);
+        if (container) {
+            if (allComments.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无数据</div>';
             } else {
-                site.forEach(c => siteBody.appendChild(commentRow(c, 'site')));
-            }
-        }
-
-        if (postBody) {
-            if (posts.length === 0) {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.colSpan = 6;
-                td.className = 'muted';
-                td.textContent = '暂无数据';
-                tr.appendChild(td);
-                postBody.appendChild(tr);
-            } else {
-                posts.forEach(c => postBody.appendChild(commentRow(c, 'post')));
+                allComments.forEach(c => container.appendChild(buildCommentCard(c)));
             }
         }
 
@@ -308,80 +401,131 @@ async function moderateComment(scope, comment, action) {
     }
 }
 
-function normalizeColumnId(value) {
-    return String(value || '')
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .slice(0, 64);
-}
+function buildColumnCard(column) {
+    const card = document.createElement('div');
+    card.className = 'admin-card';
 
-function buildColumnRow(column) {
-    const tr = document.createElement('tr');
+    // Cover
+    const coverArea = document.createElement('div');
+    coverArea.className = 'card-cover';
+    const img = document.createElement('img');
+    img.src = column.cover || '/img/default-cover.png';
+    img.onerror = () => { img.src = '/img/default-cover.png'; };
+    
+    coverArea.innerHTML = `
+        <div class="upload-hint">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span style="margin-top:4px">更换封面</span>
+        </div>
+    `;
+    coverArea.prepend(img);
 
-    const tdId = document.createElement('td');
-    const inId = document.createElement('input');
-    inId.type = 'text';
-    inId.className = 'input';
-    inId.value = column.id || '';
-    inId.placeholder = 'e.g. unity-toolchain';
-    inId.style.minWidth = '120px';
-    inId.onblur = () => { inId.value = normalizeColumnId(inId.value); };
-    tdId.appendChild(inId);
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    
+    fileInput.onchange = async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        
+        const originalSrc = img.src;
+        img.style.opacity = '0.5';
+        
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        try {
+            const res = await api('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (res.ok && data.success) {
+                img.src = data.url;
+                card._coverUrl = data.url;
+            } else {
+                alert('上传失败: ' + (data.message || '未知错误'));
+                img.src = originalSrc;
+            }
+        } catch (e) {
+            console.error('Upload failed:', e);
+            alert('上传出错，请重试');
+            img.src = originalSrc;
+        } finally {
+            img.style.opacity = '1';
+            fileInput.value = '';
+        }
+    };
+    
+    coverArea.onclick = () => fileInput.click();
+    card._coverUrl = column.cover || '';
 
-    const tdName = document.createElement('td');
-    const inName = document.createElement('input');
-    inName.type = 'text';
-    inName.className = 'input';
-    inName.value = column.name || '';
-    inName.placeholder = '专栏名称';
-    tdName.appendChild(inName);
+    // Content
+    const content = document.createElement('div');
+    content.className = 'card-content';
 
-    const tdDesc = document.createElement('td');
-    const inDesc = document.createElement('input');
-    inDesc.type = 'text';
-    inDesc.className = 'input';
-    inDesc.value = column.description || '';
-    inDesc.placeholder = '一句话描述';
-    tdDesc.appendChild(inDesc);
+    const createField = (label, value, placeholder, onInput) => {
+        const field = document.createElement('div');
+        field.className = 'card-field';
+        field.innerHTML = `<label>${label}</label>`;
+        const input = document.createElement('input');
+        input.className = 'input';
+        input.value = value || '';
+        input.placeholder = placeholder;
+        if (onInput) input.oninput = () => onInput(input.value);
+        field.appendChild(input);
+        return { field, input };
+    };
 
-    const tdCover = document.createElement('td');
-    const inCover = document.createElement('input');
-    inCover.type = 'text';
-    inCover.className = 'input';
-    inCover.value = column.cover || '';
-    inCover.placeholder = 'https://...';
-    tdCover.appendChild(inCover);
-
-    const tdActions = document.createElement('td');
-    const btnDel = buildBtn('删除', 'btn-danger', () => {
-        if (confirm('确定删除该专栏？（不会自动修改文章归属）')) {
-            tr.remove();
+    const nameField = createField('名称', column.name, '专栏名称', (val) => {
+        if ((!idInput.value || idInput._isAuto) && val) {
+             if (!column.id || idInput._isAuto) {
+                  idInput.value = generateIdFromName(val);
+                  idInput._isAuto = true;
+             }
         }
     });
-    tdActions.appendChild(buildActionButtons([btnDel]));
+    
+    const idField = createField('ID (自动生成)', column.id, 'unique-id');
+    const idInput = idField.input;
+    idInput.readOnly = true;
+    idInput.style.background = 'var(--bg)';
+    idInput.style.color = 'var(--muted)';
+    idInput._isAuto = !column.id;
 
-    tr.appendChild(tdId);
-    tr.appendChild(tdName);
-    tr.appendChild(tdDesc);
-    tr.appendChild(tdCover);
-    tr.appendChild(tdActions);
+    const descField = createField('描述', column.description, '一句话描述');
 
-    tr._getColumnData = () => ({
-        id: normalizeColumnId(inId.value),
-        name: String(inName.value || '').trim().slice(0, 64),
-        description: String(inDesc.value || '').trim().slice(0, 120),
-        cover: String(inCover.value || '').trim().slice(0, 500)
+    content.append(nameField.field, idField.field, descField.field);
+
+    // Delete Button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'card-delete-btn';
+    delBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    delBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (confirm('确定删除该专栏？（不会自动修改文章归属）')) {
+            card.remove();
+        }
+    };
+
+    card.append(coverArea, content, delBtn);
+
+    card._getColumnData = () => ({
+        id: idInput.value,
+        name: nameField.input.value,
+        description: descField.input.value,
+        cover: card._coverUrl
     });
 
-    return tr;
+    return card;
 }
 
 async function loadColumns() {
-    const tbody = document.getElementById('columns-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    const grid = document.getElementById('columns-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
     setStatus('columns-status', '加载中...');
 
     try {
@@ -390,10 +534,9 @@ async function loadColumns() {
         if (!data?.success) throw new Error(data?.message || 'FAILED');
         const columns = Array.isArray(data.columns) ? data.columns : [];
 
-        columns.forEach(c => tbody.appendChild(buildColumnRow(c)));
-        if (columns.length === 0) {
-            tbody.appendChild(buildColumnRow({ id: '', name: '', description: '', cover: '' }));
-        }
+        grid.innerHTML = '';
+        columns.forEach(c => grid.appendChild(buildColumnCard(c)));
+        
         setStatus('columns-status', '');
     } catch {
         setStatus('columns-status', '加载失败');
@@ -401,11 +544,11 @@ async function loadColumns() {
 }
 
 function collectColumnsData() {
-    const tbody = document.getElementById('columns-tbody');
-    if (!tbody) return [];
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const data = rows
-        .map(r => r._getColumnData?.())
+    const grid = document.getElementById('columns-grid');
+    if (!grid) return [];
+    const cards = Array.from(grid.querySelectorAll('.admin-card'));
+    const data = cards
+        .map(c => c._getColumnData?.())
         .filter(Boolean)
         .filter(c => c.id && c.name);
 
@@ -416,145 +559,201 @@ function collectColumnsData() {
     return Array.from(map.values());
 }
 
-async function saveColumns() {
+function saveColumns() {
     const btn = document.getElementById('btn-save-columns');
     if (btn) btn.disabled = true;
     setStatus('columns-status', '保存中...');
 
     try {
         const columns = collectColumnsData();
-        const res = await api('/api/columns', {
+        api('/api/columns', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ columns })
+        }).then(res => res.json()).then(data => {
+             if (!data?.success) throw new Error(data?.message || 'FAILED');
+             setStatus('columns-status', '已保存');
+             setTimeout(() => setStatus('columns-status', ''), 1500);
+             loadColumns();
+        }).catch(() => {
+             setStatus('columns-status', '保存失败');
+        }).finally(() => {
+             if (btn) btn.disabled = false;
         });
-        const data = await res.json();
-        if (!res.ok || !data?.success) throw new Error(data?.message || 'FAILED');
-        setStatus('columns-status', '已保存');
-        setTimeout(() => setStatus('columns-status', ''), 1500);
-        await loadColumns();
     } catch {
         setStatus('columns-status', '保存失败');
-    } finally {
         if (btn) btn.disabled = false;
     }
 }
 
-function addColumnRow() {
-    const tbody = document.getElementById('columns-tbody');
-    if (!tbody) return;
-    tbody.appendChild(buildColumnRow({ id: '', name: '', description: '', cover: '' }));
+function addColumnCard() {
+    const grid = document.getElementById('columns-grid');
+    if (!grid) return;
+    grid.prepend(buildColumnCard({ id: '', name: '', description: '', cover: '' }));
 }
 
-function buildPortfolioRow(item) {
-    const tr = document.createElement('tr');
+function generateIdFromName(name) {
+    return String(name || '').trim().toLowerCase()
+        .replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 50) || 'new-item-' + Date.now();
+}
 
-    const tdId = document.createElement('td');
-    const inId = document.createElement('input');
-    inId.type = 'text';
-    inId.className = 'input';
-    inId.value = item.id || '';
-    inId.placeholder = 'e.g. my-app';
-    inId.style.minWidth = '100px';
-    tdId.appendChild(inId);
+function buildPortfolioCard(item) {
+    const card = document.createElement('div');
+    card.className = 'admin-card';
 
-    const tdName = document.createElement('td');
-    const inName = document.createElement('input');
-    inName.type = 'text';
-    inName.className = 'input';
-    inName.value = item.name || '';
-    inName.placeholder = '作品名称';
-    tdName.appendChild(inName);
+    // Cover
+    const coverArea = document.createElement('div');
+    coverArea.className = 'card-cover';
+    const img = document.createElement('img');
+    img.src = item.cover || '/img/default-cover.png';
+    img.onerror = () => { img.src = '/img/default-cover.png'; };
+    
+    coverArea.innerHTML = `
+        <div class="upload-hint">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span style="margin-top:4px">更换封面</span>
+        </div>
+    `;
+    coverArea.prepend(img);
 
-    const tdDesc = document.createElement('td');
-    const inDesc = document.createElement('input');
-    inDesc.type = 'text';
-    inDesc.className = 'input';
-    inDesc.value = item.description || '';
-    inDesc.placeholder = '作品描述';
-    inDesc.style.minWidth = '150px';
-    tdDesc.appendChild(inDesc);
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    
+    fileInput.onchange = async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        
+        const originalSrc = img.src;
+        img.style.opacity = '0.5';
+        
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        try {
+            const res = await api('/api/upload-image', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (res.ok && data.success) {
+                img.src = data.url;
+                card._coverUrl = data.url;
+            } else {
+                alert('上传失败: ' + (data.message || '未知错误'));
+                img.src = originalSrc;
+            }
+        } catch (e) {
+            console.error('Upload failed:', e);
+            alert('上传出错，请重试');
+            img.src = originalSrc;
+        } finally {
+            img.style.opacity = '1';
+            fileInput.value = '';
+        }
+    };
+    
+    coverArea.onclick = () => fileInput.click();
+    card._coverUrl = item.cover || '';
 
-    const tdCover = document.createElement('td');
-    const inCover = document.createElement('input');
-    inCover.type = 'text';
-    inCover.className = 'input';
-    inCover.value = item.cover || '';
-    inCover.placeholder = '/img/cover.jpg';
-    tdCover.appendChild(inCover);
+    // Content
+    const content = document.createElement('div');
+    content.className = 'card-content';
 
-    const tdUrl = document.createElement('td');
-    const inUrl = document.createElement('input');
-    inUrl.type = 'text';
-    inUrl.className = 'input';
-    inUrl.value = item.url || '';
-    inUrl.placeholder = 'https://...';
-    tdUrl.appendChild(inUrl);
+    const createField = (label, value, placeholder, onInput) => {
+        const field = document.createElement('div');
+        field.className = 'card-field';
+        field.innerHTML = `<label>${label}</label>`;
+        const input = document.createElement('input');
+        input.className = 'input';
+        input.value = value || '';
+        input.placeholder = placeholder;
+        if (onInput) input.oninput = () => onInput(input.value);
+        field.appendChild(input);
+        return { field, input };
+    };
 
-    const tdTags = document.createElement('td');
-    const inTags = document.createElement('input');
-    inTags.type = 'text';
-    inTags.className = 'input';
-    inTags.value = Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '');
-    inTags.placeholder = '标签1, 标签2';
-    inTags.style.minWidth = '120px';
-    tdTags.appendChild(inTags);
+    const nameField = createField('名称', item.name, '作品名称', (val) => {
+        if ((!idInput.value || idInput._isAuto) && val) {
+            // Only auto-generate if ID is empty or was previously auto-generated
+            // And if we are creating a new item (no initial ID) or it's flagged as auto
+            if (!item.id || idInput._isAuto) {
+                 idInput.value = generateIdFromName(val);
+                 idInput._isAuto = true;
+            }
+        }
+    });
+    
+    const idField = createField('ID (自动生成)', item.id, 'unique-id');
+    const idInput = idField.input;
+    idInput.readOnly = true;
+    idInput.style.background = 'var(--bg)';
+    idInput.style.color = 'var(--muted)';
+    idInput._isAuto = !item.id; // If no ID initially, mark as auto-generated
 
-    const tdStatus = document.createElement('td');
-    const selStatus = document.createElement('select');
-    selStatus.className = 'input';
-    selStatus.innerHTML = `
+    const descField = createField('描述', item.description, '简短介绍');
+    const linkField = createField('链接', item.url, 'https://...');
+    const tagsField = createField('标签', Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''), '标签1, 标签2');
+
+    // Status
+    const statusField = document.createElement('div');
+    statusField.className = 'card-field';
+    statusField.innerHTML = `<label>状态</label>`;
+    const statusSelect = document.createElement('select');
+    statusSelect.className = 'input';
+    statusSelect.innerHTML = `
         <option value="已上线" ${item.status === '已上线' ? 'selected' : ''}>已上线</option>
         <option value="开发中" ${item.status === '开发中' ? 'selected' : ''}>开发中</option>
         <option value="已下线" ${item.status === '已下线' ? 'selected' : ''}>已下线</option>
     `;
-    tdStatus.appendChild(selStatus);
+    statusField.appendChild(statusSelect);
 
-    const tdActions = document.createElement('td');
-    const btnDel = buildBtn('删除', 'btn-danger', () => {
+    content.append(nameField.field, idField.field, descField.field, linkField.field, tagsField.field, statusField);
+
+    // Delete Button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'card-delete-btn';
+    delBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    delBtn.onclick = (e) => {
+        e.stopPropagation();
         if (confirm('确定删除该作品？')) {
-            tr.remove();
+            card.remove();
         }
-    });
-    tdActions.appendChild(buildActionButtons([btnDel]));
+    };
 
-    tr.appendChild(tdId);
-    tr.appendChild(tdName);
-    tr.appendChild(tdDesc);
-    tr.appendChild(tdCover);
-    tr.appendChild(tdUrl);
-    tr.appendChild(tdTags);
-    tr.appendChild(tdStatus);
-    tr.appendChild(tdActions);
+    card.append(coverArea, content, delBtn);
 
-    tr._getPortfolioData = () => ({
-        id: String(inId.value || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
-        name: String(inName.value || '').trim(),
-        description: String(inDesc.value || '').trim(),
-        cover: String(inCover.value || '').trim(),
-        url: String(inUrl.value || '').trim(),
-        tags: String(inTags.value || '').split(',').map(t => t.trim()).filter(Boolean),
-        status: selStatus.value
+    card._getPortfolioData = () => ({
+        id: idInput.value,
+        name: nameField.input.value,
+        description: descField.input.value,
+        cover: card._coverUrl,
+        url: linkField.input.value,
+        tags: tagsField.input.value.split(',').map(t => t.trim()).filter(Boolean),
+        status: statusSelect.value
     });
 
-    return tr;
+    return card;
 }
 
 async function loadPortfolio() {
-    const tbody = document.getElementById('portfolio-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    const grid = document.getElementById('portfolio-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
     setStatus('portfolio-status', '加载中...');
 
     try {
         const res = await fetch('/portfolio.json');
         const items = await res.json();
-        tbody.innerHTML = '';
+        grid.innerHTML = '';
 
-        (Array.isArray(items) ? items : []).forEach(item => tbody.appendChild(buildPortfolioRow(item)));
-        if (items.length === 0) {
-            tbody.appendChild(buildPortfolioRow({ id: '', name: '', description: '', cover: '', url: '', tags: [], status: '开发中' }));
-        }
+        (Array.isArray(items) ? items : []).forEach(item => grid.appendChild(buildPortfolioCard(item)));
+        
         setStatus('portfolio-status', '');
     } catch {
         setStatus('portfolio-status', '加载失败');
@@ -562,11 +761,11 @@ async function loadPortfolio() {
 }
 
 function collectPortfolioData() {
-    const tbody = document.getElementById('portfolio-tbody');
-    if (!tbody) return [];
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    const data = rows
-        .map(r => r._getPortfolioData?.())
+    const grid = document.getElementById('portfolio-grid');
+    if (!grid) return [];
+    const cards = Array.from(grid.querySelectorAll('.admin-card'));
+    const data = cards
+        .map(c => c._getPortfolioData?.())
         .filter(Boolean)
         .filter(item => item.id && item.name);
 
@@ -601,10 +800,10 @@ async function savePortfolio() {
     }
 }
 
-function addPortfolioRow() {
-    const tbody = document.getElementById('portfolio-tbody');
-    if (!tbody) return;
-    tbody.appendChild(buildPortfolioRow({ id: '', name: '', description: '', cover: '', url: '', tags: [], status: '开发中' }));
+function addPortfolioCard() {
+    const grid = document.getElementById('portfolio-grid');
+    if (!grid) return;
+    grid.prepend(buildPortfolioCard({ id: '', name: '', description: '', cover: '', url: '', tags: [], status: '开发中' }));
 }
 
 async function boot() {
@@ -644,13 +843,10 @@ async function loadDashboard() {
         document.getElementById('dash-total-posts').textContent = overview.totalPosts || 0;
         document.getElementById('dash-total-columns').textContent = overview.totalColumns || 0;
         document.getElementById('dash-total-visits').textContent = overview.totalVisits || 0;
-        document.getElementById('dash-total-comments').textContent = (overview.totalSiteComments || 0) + (overview.totalPostComments || 0);
         document.getElementById('dash-pending-comments').textContent = overview.pendingComments || 0;
 
-        renderPostsChart(data.data.postsByMonth || []);
-        renderColumnStats(data.data.columnStats || []);
-        renderRecentPosts(data.data.recentPosts || []);
-        renderRecentComments(data.data.recentComments || []);
+        renderMainChart(data.data.postsByMonth || []);
+        renderTimeline(data.data.recentPosts || [], data.data.recentComments || []);
 
         setStatus('dashboard-status', '');
     } catch (e) {
@@ -659,110 +855,106 @@ async function loadDashboard() {
     }
 }
 
-function renderPostsChart(postsByMonth) {
-    const container = document.getElementById('chart-bars');
+function renderMainChart(data) {
+    const container = document.getElementById('main-chart');
     if (!container) return;
     container.innerHTML = '';
 
-    const maxCount = Math.max(...postsByMonth.map(m => m.count), 1);
-
-    postsByMonth.forEach(item => {
-        const bar = document.createElement('div');
-        bar.className = 'chart-bar';
-        const height = (item.count / maxCount) * 100;
-        bar.innerHTML = `
-            <div class="bar-fill" style="height: ${height}%"></div>
-            <div class="bar-label">${item.month.split('-')[1]}</div>
-            <div class="bar-value">${item.count}</div>
-        `;
-        container.appendChild(bar);
-    });
-}
-
-function renderColumnStats(columnStats) {
-    const container = document.getElementById('column-stats');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (columnStats.length === 0) {
-        container.innerHTML = '<div class="empty-state">暂无专栏数据</div>';
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无数据</div>';
         return;
     }
 
-    const maxCount = Math.max(...columnStats.map(c => c.count), 1);
+    // Prepare data
+    const values = data.map(d => d.count);
+    const max = Math.max(...values, 5);
+    const points = values.map((val, i) => {
+        const x = (i / (values.length - 1)) * 100;
+        const y = 100 - (val / max) * 100;
+        return `${x},${y}`;
+    }).join(' ');
 
-    columnStats.forEach(col => {
-        const item = document.createElement('div');
-        item.className = 'column-stat-item';
-        const width = (col.count / maxCount) * 100;
-        item.innerHTML = `
-            <div class="column-stat-name">${col.name || col.id}</div>
-            <div class="column-stat-bar">
-                <div class="column-stat-fill" style="width: ${width}%"></div>
-            </div>
-            <div class="column-stat-count">${col.count}</div>
-        `;
-        container.appendChild(item);
+    // SVG Content
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.overflow = 'visible';
+
+    // Gradient
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+        <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+        </linearGradient>
+    `;
+    svg.appendChild(defs);
+
+    // Area path (closed)
+    const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    areaPath.setAttribute('d', `M0,100 ${points.split(' ').map(p => 'L' + p).join(' ')} L100,100 Z`);
+    areaPath.setAttribute('fill', 'url(#chartGradient)');
+    areaPath.setAttribute('stroke', 'none');
+    svg.appendChild(areaPath);
+
+    // Line path
+    const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    linePath.setAttribute('points', points);
+    linePath.setAttribute('fill', 'none');
+    linePath.setAttribute('stroke', 'var(--accent)');
+    linePath.setAttribute('stroke-width', '2');
+    linePath.setAttribute('vector-effect', 'non-scaling-stroke'); // Keep line width constant
+    svg.appendChild(linePath);
+
+    container.appendChild(svg);
+
+    // Dots (HTML Overlay to avoid SVG scaling distortion)
+    values.forEach((val, i) => {
+        const x = (i / (values.length - 1)) * 100;
+        const y = 100 - (val / max) * 100;
+        
+        const dot = document.createElement('div');
+        dot.className = 'chart-dot';
+        dot.style.left = `${x}%`;
+        dot.style.top = `${y}%`;
+        dot.title = `${data[i].month}: ${val} 篇`;
+        
+        container.appendChild(dot);
     });
 }
 
-function renderRecentPosts(posts) {
-    const container = document.getElementById('recent-posts-list');
+function renderTimeline(posts, comments) {
+    const container = document.getElementById('activity-timeline');
     if (!container) return;
     container.innerHTML = '';
 
-    if (posts.length === 0) {
-        container.innerHTML = '<div class="empty-state">暂无文章</div>';
+    const activities = [
+        ...posts.map(p => ({ type: 'post', date: p.date, title: '发布文章', desc: p.title, id: p.id })),
+        ...comments.map(c => ({ type: 'comment', date: c.createdAt, title: '新留言', desc: `${c.name}: ${c.content}`, id: c.id }))
+    ];
+
+    activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const recent = activities.slice(0, 8);
+
+    if (recent.length === 0) {
+        container.innerHTML = '<div class="empty-state">暂无动态</div>';
         return;
     }
 
-    posts.forEach(post => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        item.innerHTML = `
-            <div class="list-item-main">
-                <a class="list-item-title" href="/posts/${encodeURIComponent(post.id)}" target="_blank">${post.title || post.id}</a>
-                <div class="list-item-meta">
-                    <span>${post.date || '-'}</span>
-                    ${post.columnId ? `<span class="pill mono">${post.columnId}</span>` : ''}
-                </div>
-            </div>
-            <a class="btn btn-sm" href="/editor.html?id=${encodeURIComponent(post.id)}">编辑</a>
-        `;
-        container.appendChild(item);
-    });
-}
-
-function renderRecentComments(comments) {
-    const container = document.getElementById('recent-comments-list');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (comments.length === 0) {
-        container.innerHTML = '<div class="empty-state">暂无评论</div>';
-        return;
-    }
-
-    comments.forEach(c => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        const statusClass = c.status === 'pending' ? 'status-pending' : c.status === 'approved' ? 'status-approved' : 'status-rejected';
-        const statusText = c.status === 'pending' ? '待审核' : c.status === 'approved' ? '已通过' : '已拒绝';
-        item.innerHTML = `
-            <div class="list-item-main">
-                <div class="list-item-header">
-                    <span class="comment-author">${c.name}</span>
-                    <span class="comment-scope">${c.scope === 'site' ? '留言板' : '文章评论'}</span>
-                    <span class="comment-status ${statusClass}">${statusText}</span>
-                </div>
-                <div class="list-item-content">${c.content || ''}</div>
-                <div class="list-item-meta">
-                    <span>${formatDateTime(c.createdAt)}</span>
-                    ${c.postId ? `<a href="/posts/${encodeURIComponent(c.postId)}" target="_blank">查看文章</a>` : ''}
-                </div>
+    recent.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'timeline-item';
+        el.innerHTML = `
+            <div class="timeline-marker ${item.type}"></div>
+            <div class="timeline-content">
+                <span class="timeline-time">${formatDateTime(item.date)}</span>
+                <span class="timeline-title">${item.title}</span>
+                <div class="timeline-desc text-truncate">${item.desc}</div>
             </div>
         `;
-        container.appendChild(item);
+        container.appendChild(el);
     });
 }
 
@@ -798,6 +990,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveSettings = document.getElementById('btn-save-settings');
     if (saveSettings) saveSettings.addEventListener('click', saveSettingsHandler);
 
+    // Avatar Uploader Logic
+    const avatarUploader = document.getElementById('avatar-uploader');
+    const avatarInput = document.getElementById('avatar-file-input');
+    if (avatarUploader && avatarInput) {
+        avatarUploader.addEventListener('click', () => avatarInput.click());
+        avatarInput.addEventListener('change', async (e) => {
+             const file = e.target.files?.[0];
+             if (!file) return;
+             
+             // Visual feedback
+             const img = document.getElementById('cfg-owner-avatar-img');
+             const originalSrc = img ? img.src : '';
+             if (img) img.style.opacity = '0.5';
+
+             const url = await uploadImage(file);
+             
+             if (img) img.style.opacity = '1';
+             
+             if (url) {
+                 const input = document.getElementById('cfg-owner-avatar');
+                 if (img) img.src = url;
+                 if (input) input.value = url;
+             } else if (img) {
+                 img.src = originalSrc;
+             }
+             e.target.value = '';
+        });
+    }
+
+    // Keep existing image picker for other fields if any
     document.querySelectorAll('.btn-select-image').forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.getAttribute('data-target');
@@ -836,12 +1058,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const addColumnBtn = document.getElementById('btn-add-column');
-    if (addColumnBtn) addColumnBtn.addEventListener('click', addColumnRow);
+    if (addColumnBtn) addColumnBtn.addEventListener('click', addColumnCard);
     const saveColumnsBtn = document.getElementById('btn-save-columns');
     if (saveColumnsBtn) saveColumnsBtn.addEventListener('click', saveColumns);
 
     const addPortfolioBtn = document.getElementById('btn-add-portfolio');
-    if (addPortfolioBtn) addPortfolioBtn.addEventListener('click', addPortfolioRow);
+    if (addPortfolioBtn) addPortfolioBtn.addEventListener('click', addPortfolioCard);
     const savePortfolioBtn = document.getElementById('btn-save-portfolio');
     if (savePortfolioBtn) savePortfolioBtn.addEventListener('click', savePortfolio);
 
@@ -869,7 +1091,13 @@ async function loadSettings() {
 
         setFieldValue('cfg-owner-name', owner.name);
         setFieldValue('cfg-owner-title', owner.title);
-        setFieldValue('cfg-owner-avatar', owner.avatar);
+        
+        // Handle Avatar specifically
+        const avatarInput = document.getElementById('cfg-owner-avatar');
+        const avatarImg = document.getElementById('cfg-owner-avatar-img');
+        if (avatarInput) avatarInput.value = owner.avatar || '';
+        if (avatarImg) avatarImg.src = owner.avatar || '/img/default-avatar.png';
+        
         setFieldValue('cfg-owner-bio', owner.bio);
 
         setFieldValue('cfg-social-github', social.github?.url);
@@ -903,10 +1131,11 @@ async function loadSettings() {
 function setFieldValue(id, value) {
     const el = document.getElementById(id);
     if (el) el.value = value || '';
-    updateImagePreview(id, value);
+    // No longer using updateImagePreview for general fields as avatar is handled separately
 }
 
 function updateImagePreview(inputId, url) {
+    // Deprecated for avatar, kept if needed for other image pickers
     const previewMap = {
         'cfg-owner-avatar': 'avatar-preview'
     };

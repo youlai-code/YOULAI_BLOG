@@ -1,11 +1,15 @@
 [
-    {
-        "id": "youlai-note",
-        "name": "又来笔记",
-        "description": "一个专注于Unity3D、C#、Web全栈开发的个人技术博客。采用P5风格设计，支持Markdown写作、代码高亮、评论系统等功能。",
-        "cover": "/img/head.jpg",
-        "url": "https://youlainote.cn",
-        "tags": ["Web", "博客", "Node.js"],
-        "status": "已上线"
-    }
+  {
+    "id": "youlai-note",
+    "name": "又来笔记",
+    "description": "一个专注于Unity3D、C#、Web全栈开发的个人技术博客。采用P5风格设计，支持Markdown写作、代码高亮、评论系统等功能。",
+    "cover": "https://pub-a90cecdbad6b464fb7238bf4fa2dcbce.r2.dev/blog-images/1772606335920-923758045.jpg",
+    "url": "https://youlainote.cn",
+    "tags": [
+      "Web",
+      "博客",
+      "Node.js"
+    ],
+    "status": "已上线"
+  }
 ]
