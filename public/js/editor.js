@@ -1,11 +1,8 @@
-
-// editor.js 新版：支持新建与编辑模式
+// editor.js - 极简写作模式
 const input = document.getElementById('markdown-input');
 const preview = document.getElementById('preview-content');
-const previewPane = document.querySelector('.preview-pane');
 let currentEditingId = null;
 let columnsCache = [];
-
 function getAdminToken() {
     return localStorage.getItem('YOULAI_ADMIN_TOKEN') || '';
 }
@@ -14,6 +11,22 @@ function withAdminHeaders(headers) {
     const token = getAdminToken();
     if (!token) return headers;
     return { ...headers, 'x-admin-token': token };
+}
+
+// 切换文章信息面板
+function toggleMetaPanel() {
+    const panel = document.getElementById('metaPanel');
+    const overlay = document.getElementById('metaOverlay');
+    const isActive = panel.classList.toggle('active');
+    overlay.classList.toggle('active');
+    
+    // 打开面板时，如果标题为空，自动聚焦标题输入框
+    if (isActive) {
+        const titleInput = document.getElementById('in-title');
+        if (titleInput && !titleInput.value.trim()) {
+            setTimeout(() => titleInput.focus(), 300);
+        }
+    }
 }
 
 // 初始化
@@ -35,9 +48,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (editId) {
         await loadPostForEdit(editId);
     }
-    updateWordCount(); // 初始化字数
+    
+    updateStats();
+    
+    // 自动保存草稿到 localStorage
+    loadDraft();
+    setupAutoSave();
 });
 
+// 加载专栏选项
 async function loadColumnsOptions(selectedId) {
     const selectEl = document.getElementById('in-column');
     if (!selectEl) return;
@@ -46,11 +65,7 @@ async function loadColumnsOptions(selectedId) {
         const data = await res.json();
         columnsCache = Array.isArray(data?.columns) ? data.columns : [];
 
-        selectEl.innerHTML = '';
-        const emptyOpt = document.createElement('option');
-        emptyOpt.value = '';
-        emptyOpt.textContent = '未加入专栏';
-        selectEl.appendChild(emptyOpt);
+        selectEl.innerHTML = '<option value="">未加入专栏</option>';
 
         columnsCache.forEach(col => {
             const opt = document.createElement('option');
@@ -72,13 +87,13 @@ async function loadPostForEdit(id) {
         const posts = await listRes.json();
         const meta = posts.find(p => p.id === id);
         if (!meta) {
-            alert("文章未找到！");
+            showNotification("文章未找到！", "error");
             return;
         }
         const contentRes = await fetch(`/posts/${id}.md`);
         let content = await contentRes.text();
 
-        // 移除 Markdown 头部元数据 (Frontmatter) 以避免在编辑器中显示
+        // 移除 Markdown 头部元数据
         const frontMatterRegex = /^---[\r\n]+([\s\S]*?)[\r\n]+---/;
         const match = content.match(frontMatterRegex);
         if (match) {
@@ -88,11 +103,11 @@ async function loadPostForEdit(id) {
         document.getElementById('in-title').value = meta.title;
         document.getElementById('in-date').value = meta.date;
         document.getElementById('in-tags').value = Array.isArray(meta.tags) ? meta.tags.join(' / ') : meta.tags;
-        document.getElementById('in-summary').value = meta.summary;
-        document.getElementById('in-cover').value = meta.cover || '';  // 加载封面
+        document.getElementById('in-summary').value = meta.summary || '';
+        document.getElementById('in-cover').value = meta.cover || '';
         await loadColumnsOptions(meta.columnId || '');
 
-        // 如果有封面，显示预览
+        // 显示封面预览
         if (meta.cover) {
             const previewImg = document.getElementById('cover-preview-img');
             const placeholder = document.getElementById('cover-placeholder');
@@ -107,56 +122,170 @@ async function loadPostForEdit(id) {
         currentEditingId = id;
         input.dispatchEvent(new Event('input'));
 
-        document.querySelector('.btn-publish').innerText = "更新文章";
+        document.querySelector('.btn-publish').innerHTML = '<span>发布</span>';
     } catch (err) {
         console.error(err);
-        alert("加载文章数据失败");
+        showNotification("加载文章失败", "error");
     }
 }
 
 // 实时预览与字数统计
-input.addEventListener('input', () => {
-    preview.innerHTML = marked.parse(input.value);
-    Prism.highlightAllUnder(preview);
-    updateWordCount();
+input.addEventListener('input', updatePreview);
+
+// 标题输入同步到预览
+document.getElementById('in-title').addEventListener('input', (e) => {
+    updatePreview();
+    updateSaveStatus('已修改');
 });
 
-// 字数统计功能
-function updateWordCount() {
+// 更新预览
+function updatePreview() {
+    // 只渲染内容，不显示标题
+    preview.innerHTML = marked.parse(input.value);
+    Prism.highlightAllUnder(preview);
+    updateStats();
+    updateSaveStatus('已修改');
+}
+
+// HTML转义
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 更新统计信息
+function updateStats() {
     const text = input.value;
-    // 简单的字数统计：中文字符算1个，英文单词算1个
+    // 字数统计
     const cnChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
     const enWords = (text.replace(/[\u4e00-\u9fa5]/g, ' ').match(/[a-zA-Z0-9_\u0392-\u03c9\u0400-\u04FF]+(?=\s|$)/g) || []).length;
     const total = cnChars + enWords;
 
-    const wordCountEl = document.getElementById('word-count-text');
-    if (wordCountEl) {
-        wordCountEl.innerText = total;
+    document.getElementById('word-count').innerText = total.toLocaleString();
+    
+    // 阅读时间估算（假设每分钟 300 字）
+    const readTime = Math.max(1, Math.ceil(total / 300));
+    document.getElementById('read-time').innerText = readTime;
+}
+
+// 更新保存状态
+function updateSaveStatus(status) {
+    const statusEl = document.getElementById('save-status');
+    if (statusEl) {
+        statusEl.innerText = status;
+        if (status === '已保存') {
+            statusEl.style.color = '#4ade80';
+        } else if (status === '已修改') {
+            statusEl.style.color = '#fbbf24';
+        } else {
+            statusEl.style.color = '#888';
+        }
     }
 }
 
-// 滚动同步功能
-let isScrolling = false;
+// 自动保存草稿
+function setupAutoSave() {
+    let timeout;
+    const saveDraft = () => {
+        const draft = {
+            title: document.getElementById('in-title').value,
+            content: input.value,
+            date: document.getElementById('in-date').value,
+            tags: document.getElementById('in-tags').value,
+            summary: document.getElementById('in-summary').value,
+            cover: document.getElementById('in-cover').value,
+            columnId: document.getElementById('in-column').value,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('editor_draft', JSON.stringify(draft));
+        updateSaveStatus('已保存');
+    };
 
-input.addEventListener('scroll', () => {
-    if (!isScrolling) {
-        isScrolling = true;
-        const percentage = input.scrollTop / (input.scrollHeight - input.clientHeight);
-        previewPane.scrollTop = percentage * (previewPane.scrollHeight - previewPane.clientHeight);
-        setTimeout(() => isScrolling = false, 10); // 防止死循环
+    const inputs = document.querySelectorAll('#in-title, #in-tags, #in-summary, #in-date, #in-column, #markdown-input');
+    inputs.forEach(el => {
+        el.addEventListener('input', () => {
+            clearTimeout(timeout);
+            updateSaveStatus('保存中...');
+            timeout = setTimeout(saveDraft, 2000);
+        });
+    });
+}
+
+// 加载草稿
+function loadDraft() {
+    const draftStr = localStorage.getItem('editor_draft');
+    if (!draftStr) return;
+    
+    try {
+        const draft = JSON.parse(draftStr);
+        const params = new URLSearchParams(window.location.search);
+        
+        // 如果是编辑模式，不加载草稿
+        if (params.get('id')) return;
+        
+        // 检查草稿是否过期（7天）
+        const daysSince = (Date.now() - draft.timestamp) / (1000 * 60 * 60 * 24);
+        if (daysSince > 7) {
+            localStorage.removeItem('editor_draft');
+            return;
+        }
+        
+        if (draft.title || draft.content) {
+            if (confirm('检测到未发布的草稿，是否恢复？')) {
+                document.getElementById('in-title').value = draft.title || '';
+                input.value = draft.content || '';
+                document.getElementById('in-date').value = draft.date || '';
+                document.getElementById('in-tags').value = draft.tags || '';
+                document.getElementById('in-summary').value = draft.summary || '';
+                document.getElementById('in-cover').value = draft.cover || '';
+                document.getElementById('in-column').value = draft.columnId || '';
+                
+                // 恢复封面预览
+                if (draft.cover) {
+                    const previewImg = document.getElementById('cover-preview-img');
+                    const placeholder = document.getElementById('cover-placeholder');
+                    if (previewImg && placeholder) {
+                        previewImg.src = draft.cover;
+                        previewImg.style.display = 'block';
+                        placeholder.style.display = 'none';
+                    }
+                }
+                
+                input.dispatchEvent(new Event('input'));
+            } else {
+                localStorage.removeItem('editor_draft');
+            }
+        }
+    } catch (e) {
+        console.error('加载草稿失败:', e);
     }
-});
+}
 
-previewPane.addEventListener('scroll', () => {
+// 滚动同步
+let isScrolling = false;
+const previewContent = document.querySelector('.preview-content-wrapper');
+
+function syncScroll(source, target) {
     if (!isScrolling) {
         isScrolling = true;
-        const percentage = previewPane.scrollTop / (previewPane.scrollHeight - previewPane.clientHeight);
-        input.scrollTop = percentage * (input.scrollHeight - input.clientHeight);
+        const percentage = source.scrollTop / (source.scrollHeight - source.clientHeight);
+        target.scrollTop = percentage * (target.scrollHeight - target.clientHeight);
         setTimeout(() => isScrolling = false, 10);
     }
-});
+}
 
-// 粘贴板图片上传支持
+if (input && previewContent) {
+    input.addEventListener('scroll', () => syncScroll(input, previewContent));
+    previewContent.addEventListener('scroll', () => syncScroll(previewContent, input));
+    
+    // 初始同步
+    setTimeout(() => {
+        syncScroll(input, previewContent);
+    }, 100);
+}
+
+// 粘贴图片上传
 input.addEventListener('paste', async (event) => {
     const items = (event.clipboardData || event.originalEvent.clipboardData).items;
     for (let index in items) {
@@ -164,7 +293,7 @@ input.addEventListener('paste', async (event) => {
         if (item.kind === 'file' && item.type.indexOf('image/') !== -1) {
             const blob = item.getAsFile();
             await uploadPastedImage(blob);
-            event.preventDefault(); // 阻止默认粘贴行为（防止粘贴二进制乱码）
+            event.preventDefault();
         }
     }
 });
@@ -173,8 +302,7 @@ async function uploadPastedImage(file) {
     const formData = new FormData();
     formData.append('image', file);
     
-    // 显示上传中提示
-    insertText('![上传中...](', ')');
+    insertText('![上传中...]()', '');
     
     try {
         const res = await fetch('/api/upload-image', {
@@ -185,117 +313,82 @@ async function uploadPastedImage(file) {
         const result = await res.json();
         
         if (result.success) {
-            // 替换占位符为真实链接
-            const currentVal = input.value;
-            // 简单替换最后一次插入的占位符（注意：如果用户在上传期间快速输入可能会有偏差，这里做简化处理）
-            // 更严谨的做法是记录光标位置或使用唯一占位符 ID
-            input.value = currentVal.replace('![上传中...]()', `![image](${result.url})`);
+            input.value = input.value.replace('![上传中...]()', `![image](${result.url})`);
             input.dispatchEvent(new Event('input'));
         } else {
-            alert('图片上传失败: ' + result.message);
-            input.value = input.value.replace('![上传中...]()', ''); // 清除占位符
+            showNotification('图片上传失败: ' + result.message, 'error');
+            input.value = input.value.replace('![上传中...]()', '');
         }
     } catch (err) {
         console.error('Upload error:', err);
-        alert('上传出错');
+        showNotification('上传出错', 'error');
         input.value = input.value.replace('![上传中...]()', '');
     }
 }
 
-// 快捷插入
+// 插入文本
 function insertText(before, after) {
     const start = input.selectionStart;
     const end = input.selectionEnd;
     const text = input.value;
     const selected = text.substring(start, end);
-    input.value = text.substring(0, start) + (before + selected + after) + text.substring(end);
+    
+    const newText = text.substring(0, start) + before + selected + after + text.substring(end);
+    input.value = newText;
+    
+    const newCursor = start + before.length + selected.length;
+    input.setSelectionRange(newCursor, newCursor);
     input.focus();
-    input.selectionStart = start + before.length;
-    input.selectionEnd = start + before.length + selected.length;
     input.dispatchEvent(new Event('input'));
 }
 
-// editor.js 中的 publish 函数
+// 上传图片
+function uploadImage() {
+    document.getElementById('image-upload-input').click();
+}
 
-async function publish() {
-    let finalId;
-    if (currentEditingId) {
-        finalId = currentEditingId;
-    } else {
-        const now = new Date();
-        const timestamp = now.toISOString().replace(/[-T:.]/g, '').slice(0, 14);
-        finalId = `post_${timestamp}`;
-    }
-
-    const data = {
-        id: finalId,
-        title: document.getElementById('in-title').value,
-        date: document.getElementById('in-date').value,
-        tags: document.getElementById('in-tags').value,
-        summary: document.getElementById('in-summary').value,
-        content: input.value,
-        cover: document.getElementById('in-cover').value || null,
-        columnId: document.getElementById('in-column')?.value || ''
-    };
-
-    console.log("Preparing to publish:", data); // Debug log
-
-    if (!data.title || !data.content) {
-        Phantom.alert("数据缺失: 标题和内容是必填项。", "数据错误");
-        return;
-    }
-
+async function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    insertText('![上传中...]()', '');
+    
     try {
-        const res = await fetch('/api/upload', {
+        const res = await fetch('/api/upload-image', {
             method: 'POST',
-            headers: withAdminHeaders({ 'Content-Type': 'application/json' }),
-            body: JSON.stringify(data)
+            headers: withAdminHeaders({}),
+            body: formData
         });
         const result = await res.json();
-
+        
         if (result.success) {
-            const msg = currentEditingId ? "文章已更新！" : "新文章已创建！";
-            Phantom.confirm(msg + "\n返回首页？", () => {
-                // 修改为返回上一级 ../index.html
-                window.location.href = '/index.html';
-            }, "操作成功");
+            input.value = input.value.replace('![上传中...]()', `![${file.name}](${result.url})`);
+            input.dispatchEvent(new Event('input'));
         } else {
-            Phantom.alert("错误: " + result.message, "服务器错误");
+            showNotification('上传失败: ' + result.message, 'error');
+            input.value = input.value.replace('![上传中...]()', '');
         }
     } catch (err) {
-        Phantom.alert("网络错误: server.js 是否在运行？", "连接丢失");
+        console.error(err);
+        showNotification('上传出错', 'error');
+        input.value = input.value.replace('![上传中...]()', '');
+    }
+    
+    event.target.value = '';
+}
+
+// 插入视频
+function insertVideo() {
+    const url = prompt('请输入视频链接 (支持 Bilibili、YouTube 等):');
+    if (url) {
+        insertText(`\n<video src="${url}" controls style="max-width:100%;"></video>\n`, '');
     }
 }
-// AI 自动填充逻辑
-async function aiAutoFill() {
-    const content = input.value;
-    // 注意：按钮现在在 header 里，class 是 btn-ai
-    const btn = document.querySelector('.btn-ai');
 
-    if (content.length < 10) { alert("内容太短，无法生成"); return; }
-
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 思考中...';
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/ai-generate', { method: 'POST', headers: withAdminHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ content }) });
-        const result = await res.json();
-        if (result.success) {
-            if (!document.getElementById('in-title').value) document.getElementById('in-title').value = result.data.title;
-            if (!document.getElementById('in-summary').value) document.getElementById('in-summary').value = result.data.summary;
-            if (!document.getElementById('in-tags').value) document.getElementById('in-tags').value = result.data.tags;
-            btn.innerHTML = '<i class="fas fa-check"></i> 完成!';
-        } else { alert("AI 生成失败"); }
-    } catch (e) { alert("网络错误"); }
-
-    setTimeout(() => {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }, 2000);
-}
-
-// 封面上传功能
+// 封面上传
 function uploadCover() {
     document.getElementById('cover-upload-input').click();
 }
@@ -303,23 +396,15 @@ function uploadCover() {
 async function handleCoverUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
-
-    // 检查文件类型
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-        alert('只支持上传图片文件 (jpg, jpeg, png, gif, webp)');
-        return;
-    }
-
-    // 检查文件大小 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        alert('图片大小不能超过 5MB');
-        return;
-    }
-
+    
     const formData = new FormData();
     formData.append('image', file);
-
+    
+    const placeholder = document.getElementById('cover-placeholder');
+    const previewImg = document.getElementById('cover-preview-img');
+    
+    placeholder.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>上传中...</span>';
+    
     try {
         const res = await fetch('/api/upload-image', {
             method: 'POST',
@@ -327,150 +412,217 @@ async function handleCoverUpload(event) {
             body: formData
         });
         const result = await res.json();
-
+        
         if (result.success) {
             document.getElementById('in-cover').value = result.url;
-
-            // 显示封面预览
-            const previewImg = document.getElementById('cover-preview-img');
-            const placeholder = document.getElementById('cover-placeholder');
-
-            if (previewImg && placeholder) {
-                previewImg.src = result.url;
-                previewImg.style.display = 'block';
-                placeholder.style.display = 'none';
-            }
-
-            console.log('封面上传成功:', result.url);
-            // 迷你模式下不弹窗打扰，或者用小提示
-            // alert('封面上传成功！'); 
+            previewImg.src = result.url;
+            previewImg.style.display = 'block';
+            placeholder.style.display = 'none';
+            showNotification('封面上传成功', 'success');
         } else {
-            alert('封面上传失败: ' + result.message);
+            showNotification('上传失败: ' + result.message, 'error');
+            placeholder.innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>点击上传封面</span>';
         }
     } catch (err) {
-        console.error('上传错误:', err);
-        alert('封面上传失败，请检查网络连接');
+        console.error(err);
+        showNotification('上传出错', 'error');
+        placeholder.innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>点击上传封面</span>';
     }
-
+    
     event.target.value = '';
 }
 
-// --- 图片上传功能 ---
-function uploadImage() {
-    // 触发隐藏的文件选择器
-    document.getElementById('image-upload-input').click();
+// AI 自动生成
+async function aiAutoFill() {
+    const content = input.value.trim();
+    if (!content || content.length < 50) {
+        showNotification('请先输入至少 50 字文章内容', 'error');
+        return;
+    }
+    
+    // 检查登录状态
+    const token = getAdminToken();
+    if (!token) {
+        showNotification('请先登录管理员账号', 'error');
+        setTimeout(() => {
+            window.location.href = '/login.html';
+        }, 1500);
+        return;
+    }
+    
+    const btn = document.querySelector('.ai-generate-btn');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span>生成中...</span>';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/ai-generate', {
+            method: 'POST',
+            headers: withAdminHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ content })
+        });
+        
+        if (!res.ok) {
+            if (res.status === 401) {
+                showNotification('登录已过期，请重新登录', 'error');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 1500);
+                return;
+            }
+            throw new Error('网络错误');
+        }
+        
+        const result = await res.json();
+        
+        if (result.success) {
+            if (result.data.title) document.getElementById('in-title').value = result.data.title;
+            if (result.data.summary) document.getElementById('in-summary').value = result.data.summary;
+            if (result.data.tags) document.getElementById('in-tags').value = result.data.tags;
+            showNotification('AI 生成完成', 'success');
+        } else {
+            showNotification('生成失败: ' + result.message, 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showNotification('AI 服务出错', 'error');
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
 }
 
-async function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    // 检查文件类型
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-        alert('只支持上传图片文件 (jpg, jpeg, png, gif, webp)');
+// 发布文章
+async function publish() {
+    // 检查登录状态
+    const token = getAdminToken();
+    if (!token) {
+        showNotification('请先登录管理员账号', 'error');
+        setTimeout(() => {
+            window.location.href = '/login.html';
+        }, 1500);
         return;
     }
 
-    // 检查文件大小 (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-        alert('图片大小不能超过 5MB');
+    const title = document.getElementById('in-title').value.trim();
+    const content = input.value.trim();
+    const date = document.getElementById('in-date').value.trim();
+    const tags = document.getElementById('in-tags').value.trim();
+    const summary = document.getElementById('in-summary').value.trim();
+    const cover = document.getElementById('in-cover').value.trim();
+    const columnId = document.getElementById('in-column')?.value || '';
+
+    if (!title) {
+        showNotification('请输入文章标题', 'error');
+        document.getElementById('in-title').focus();
+        return;
+    }
+    if (!content) {
+        showNotification('请输入文章内容', 'error');
+        input.focus();
+        return;
+    }
+    if (!date) {
+        showNotification('请输入发布日期', 'error');
         return;
     }
 
-    // 创建 FormData
-    const formData = new FormData();
-    formData.append('image', file);
+    const btn = document.querySelector('.btn-publish');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span>发布中...</span>';
+    btn.disabled = true;
+
+    const data = {
+        id: currentEditingId,
+        title,
+        content,
+        date,
+        tags,
+        summary,
+        cover,
+        columnId
+    };
 
     try {
-        // 显示上传进度
-        const startText = `\n\n![上传中...]()\n`;
-        insertText(startText, '');
-
-        // 上传到服务器
-        const res = await fetch('/api/upload-image', {
+        const res = await fetch('/api/upload', {
             method: 'POST',
-            headers: withAdminHeaders({}),
-            body: formData
+            headers: withAdminHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(data)
         });
 
         const result = await res.json();
 
         if (result.success) {
-            // 替换上传中的文本为实际图片
-            const imageMarkdown = `![${file.name}](${result.url})`;
-            input.value = input.value.replace(startText, `\n\n${imageMarkdown}\n`);
-            input.dispatchEvent(new Event('input'));
-            console.log('图片上传成功:', result.url);
+            showNotification(currentEditingId ? '文章更新成功！' : '文章发布成功！', 'success');
+            localStorage.removeItem('editor_draft');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
         } else {
-            alert('上传失败: ' + result.message);
-            // 清除上传中的文本
-            input.value = input.value.replace(startText, '');
-            input.dispatchEvent(new Event('input'));
+            showNotification('发布失败: ' + result.message, 'error');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
         }
     } catch (err) {
-        console.error('上传错误:', err);
-        alert('上传失败，请检查网络连接');
-        // 清除上传中的文本
-        input.value = input.value.replace(`\n\n![上传中...]()\n`, '');
-        input.dispatchEvent(new Event('input'));
+        console.error(err);
+        showNotification('发布出错', 'error');
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
     }
-
-    // 重置文件选择器
-    event.target.value = '';
 }
 
-// --- 视频嵌入功能 ---
-function insertVideo() {
-    const videoUrl = prompt('请输入视频链接:\n\n支持:\n- YouTube: https://www.youtube.com/watch?v=...\n- Bilibili: https://www.bilibili.com/video/BV...\n- 腾讯视频: https://v.qq.com/x/page/...\n- 直接视频文件: .mp4 / .webm 链接');
-
-    if (!videoUrl) return;
-
-    let embedCode = '';
-
-    // 识别视频平台并生成嵌入代码
-    if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-        // YouTube 视频
-        let videoId = '';
-        if (videoUrl.includes('watch?v=')) {
-            videoId = videoUrl.split('watch?v=')[1].split('&')[0];
-        } else if (videoUrl.includes('youtu.be/')) {
-            videoId = videoUrl.split('youtu.be/')[1].split('?')[0];
-        }
-        embedCode = `\n<div class="video-container">\n  <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>\n</div>\n`;
+// 通知提示
+function showNotification(message, type = 'info') {
+    // 创建通知元素
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-100px);
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        z-index: 10000;
+        transition: transform 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    `;
+    
+    if (type === 'success') {
+        notif.style.background = '#22c55e';
+        notif.style.color = 'white';
+        notif.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+    } else if (type === 'error') {
+        notif.style.background = '#ef4444';
+        notif.style.color = 'white';
+        notif.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+    } else {
+        notif.style.background = '#3b82f6';
+        notif.style.color = 'white';
+        notif.innerHTML = `<i class="fas fa-info-circle"></i> ${message}`;
     }
-    else if (videoUrl.includes('bilibili.com')) {
-        // Bilibili 视频
-        let bvid = '';
-        if (videoUrl.includes('/video/')) {
-            bvid = videoUrl.split('/video/')[1].split('/')[0].split('?')[0];
-        }
-        embedCode = `\n<div class="video-container">\n  <iframe src="//player.bilibili.com/player.html?bvid=${bvid}&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"></iframe>\n</div>\n`;
-    }
-    else if (videoUrl.includes('v.qq.com')) {
-        // 腾讯视频
-        let vid = '';
-        if (videoUrl.includes('/x/page/')) {
-            vid = videoUrl.split('/x/page/')[1].split('.')[0];
-        } else if (videoUrl.includes('/x/cover/')) {
-            vid = videoUrl.split('/')[videoUrl.split('/').length - 1].split('.')[0];
-        }
-        embedCode = `\n<div class="video-container">\n  <iframe src="https://v.qq.com/txp/iframe/player.html?vid=${vid}" frameborder="0" allowfullscreen></iframe>\n</div>\n`;
-    }
-    else if (videoUrl.match(/\.(mp4|webm|ogg)$/i)) {
-        // 直接视频文件
-        embedCode = `\n<div class="video-container">\n  <video controls>\n    <source src="${videoUrl}" type="video/${videoUrl.split('.').pop()}">\n    您的浏览器不支持视频播放。\n  </video>\n</div>\n`;
-    }
-    else {
-        // 未识别的链接，使用通用 iframe
-        const useIframe = confirm('未能识别视频平台，是否使用通用 iframe 嵌入？\n（如果是其他平台的分享链接，通常可以正常工作）');
-        if (useIframe) {
-            embedCode = `\n<div class="video-container">\n  <iframe src="${videoUrl}" frameborder="0" allowfullscreen></iframe>\n</div>\n`;
-        } else {
-            return;
-        }
-    }
-
-    // 插入到编辑器
-    insertText(embedCode, '');
+    
+    document.body.appendChild(notif);
+    
+    // 动画显示
+    requestAnimationFrame(() => {
+        notif.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    
+    // 自动隐藏
+    setTimeout(() => {
+        notif.style.transform = 'translateX(-50%) translateY(-100px)';
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
 }
+
+// Tab 键支持
+input.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        insertText('    ', '');
+    }
+});

@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="/css/model.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+SC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
@@ -17,16 +21,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
     <script>
-        // 权限检查
         fetch('config.json')
              .then(res => res.json())
              .then(config => {
                  if (!config.features?.enableEditor && localStorage.getItem('YOULAI_ADMIN') !== 'true' && !localStorage.getItem('YOULAI_ADMIN_TOKEN')) {
                      document.body.innerHTML = `
-                         <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#222; color:white; flex-direction:column;">
-                             <h1 style="font-family:'Bangers'; color:red; font-size:3rem;">ACCESS DENIED</h1>
+                         <div style="display:flex; justify-content:center; align-items:center; height:100vh; background:#0a0a0a; color:white; flex-direction:column;">
+                             <h1 style="font-family:'Bangers'; color:#ff2a2a; font-size:3rem;">ACCESS DENIED</h1>
                              <p>编辑功能已关闭。</p>
-                             <a href="/" style="color:#f5e02e; margin-top:20px;">返回首页</a>
+                             <a href="/" style="color:#ffd700; margin-top:20px;">返回首页</a>
                          </div>
                      `;
                  }
@@ -36,88 +39,137 @@
 </head>
 
 <body>
-    <header class="editor-header">
-        <!-- 顶部紧凑布局 -->
-        <div class="header-content">
-            <!-- 左侧：封面缩略图 -->
-            <div class="cover-upload-mini" onclick="uploadCover()" title="点击上传封面">
-                <img id="cover-preview-img" style="display: none;">
-                <div id="cover-placeholder">
-                    <i class="fas fa-image"></i>
-                </div>
-                <input type="file" id="cover-upload-input" accept="image/*" style="display:none;"
-                    onchange="handleCoverUpload(event)">
-                <input type="text" id="in-cover" style="display:none;">
+    <!-- 顶部工具栏 -->
+    <header class="editor-topbar">
+        <div class="topbar-left">
+            <a href="/" class="brand-logo-editor">YOULAI NOTE</a>
+        </div>
+        
+        <div class="topbar-center">
+            <div class="format-toolbar">
+                <button class="tool-btn image-btn" onclick="insertText('**', '**')" title="粗体"><i class="fas fa-bold"></i></button>
+                <button class="tool-btn image-btn" onclick="insertText('*', '*')" title="斜体"><i class="fas fa-italic"></i></button>
+                <button class="tool-btn image-btn" onclick="insertText('# ', '')" title="标题1">H1</button>
+                <button class="tool-btn image-btn" onclick="insertText('## ', '')" title="标题2">H2</button>
+                <button class="tool-btn image-btn" onclick="insertText('### ', '')" title="标题3">H3</button>
+                <span class="toolbar-divider"></span>
+                <button class="tool-btn image-btn" onclick="insertText('```csharp\n', '\n```')" title="代码块"><i class="fas fa-code"></i></button>
+                <button class="tool-btn image-btn" onclick="insertText('> ', '')" title="引用"><i class="fas fa-quote-right"></i></button>
+                <button class="tool-btn image-btn" onclick="insertText('[', '](url)')" title="链接"><i class="fas fa-link"></i></button>
+                <span class="toolbar-divider"></span>
+                <button class="tool-btn image-btn" onclick="uploadImage()" title="插入图片"><i class="fas fa-image"></i></button>
+                <button class="tool-btn image-btn" onclick="insertVideo()" title="插入视频"><i class="fas fa-video"></i></button>
+                <input type="file" id="image-upload-input" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
             </div>
-
-            <!-- 中间：主要信息输入 -->
-            <div class="header-inputs">
-                <div class="input-row top-row">
-                    <input type="text" id="in-title" class="p5-input title-input" placeholder="文章标题">
-                    <input type="text" id="in-date" class="p5-input small-input" placeholder="日期">
-                    <input type="text" id="in-tags" class="p5-input small-input" placeholder="标签">
-                    <button onclick="aiAutoFill()" class="action-btn btn-ai" title="AI 自动生成信息">
-                        <i class="fas fa-bolt"></i> AI 生成
-                    </button>
-                </div>
-                <div class="input-row bottom-row">
-                    <input type="text" id="in-summary" class="p5-input flex-input" placeholder="摘要">
-                </div>
-            </div>
+        </div>
+        
+        <div class="topbar-right">
+            <button class="btn-meta image-action-btn" onclick="toggleMetaPanel()" title="文章设置">
+                <span>设置</span>
+            </button>
+            <button class="btn-publish image-publish-btn" onclick="publish()">
+                <span>发布</span>
+            </button>
         </div>
     </header>
 
-    <div class="workspace">
-        <div class="edit-pane">
-            <div class="toolbar">
-                <button class="tool-btn" onclick="insertText('**', '**')">B</button>
-                <button class="tool-btn" onclick="insertText('*', '*')">I</button>
-                <button class="tool-btn" onclick="insertText('# ', '')">H1</button>
-                <button class="tool-btn" onclick="insertText('## ', '')">H2</button>
-                <button class="tool-btn" onclick="insertText('### ', '')">H3</button>
-                <button class="tool-btn" onclick="insertText('```csharp\n', '\n```')">{ }</button>
-                <button class="tool-btn" onclick="insertText('> ', '')">Ref</button>
-                <button class="tool-btn" onclick="uploadImage()" title="上传图片">📷 Img</button>
-                <button class="tool-btn" onclick="insertVideo()" title="插入视频">🎬 Vid</button>
-                <button class="tool-btn" onclick="insertText('[Text](', ')')">Link</button>
-                <!-- 隐藏的文件上传输入 -->
-                <input type="file" id="image-upload-input" accept="image/*" style="display:none;"
-                    onchange="handleImageUpload(event)">
-            </div>
-            <textarea id="markdown-input" placeholder="# 在此开始写作..."></textarea>
-        </div>
+    <!-- 主体区域 -->
+    <main class="editor-body">
+        <!-- 编辑区 -->
+        <section class="editor-section">
+            <textarea id="markdown-input" class="content-input" placeholder="开始写作..." spellcheck="false"></textarea>
+        </section>
 
-        <div class="preview-pane">
-            <div id="preview-content" class="markdown-body">
-                <h1 style="color:#ccc; text-align:center; margin-top:50px;">预览区域</h1>
+        <!-- 预览区 -->
+        <section class="preview-section">
+            <div class="preview-header">
+                <span class="preview-label"><i class="fas fa-eye"></i> 实时预览</span>
+            </div>
+            <div class="preview-content-wrapper">
+                <div id="preview-content" class="markdown-body"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部状态栏 -->
+    <footer class="editor-statusbar">
+        <div class="status-left">
+            <span class="status-item"><i class="fas fa-file-word"></i> <span id="word-count">0</span> 字</span>
+            <span class="status-divider">|</span>
+            <span class="status-item"><i class="fas fa-clock"></i> <span id="read-time">1</span> 分钟阅读</span>
+        </div>
+        <div class="status-right">
+            <span class="status-item" id="save-status">就绪</span>
+        </div>
+    </footer>
+
+    <!-- 文章设置面板（悬浮） -->
+    <div class="meta-panel" id="metaPanel">
+        <div class="meta-panel-header">
+            <h3><i class="fas fa-sliders-h"></i> 文章设置</h3>
+            <button class="btn-close-meta" onclick="toggleMetaPanel()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="meta-panel-body">
+            <!-- 标题 -->
+            <div class="meta-group">
+                <label><i class="fas fa-heading"></i> 文章标题</label>
+                <input type="text" id="in-title" class="meta-input" placeholder="输入文章标题...">
+            </div>
+
+            <!-- 封面 -->
+            <div class="meta-group">
+                <label><i class="fas fa-image"></i> 封面图片</label>
+                <div class="cover-upload" onclick="uploadCover()">
+                    <img id="cover-preview-img" style="display: none;">
+                    <div id="cover-placeholder">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>点击上传封面</span>
+                    </div>
+                </div>
+                <input type="file" id="cover-upload-input" accept="image/*" style="display:none;" onchange="handleCoverUpload(event)">
+                <input type="text" id="in-cover" style="display:none;">
+            </div>
+
+            <!-- 日期 -->
+            <div class="meta-group">
+                <label><i class="fas fa-calendar"></i> 发布日期</label>
+                <input type="text" id="in-date" class="meta-input" placeholder="YYYY.MM.DD HH:mm">
+            </div>
+
+            <!-- 标签 -->
+            <div class="meta-group">
+                <label><i class="fas fa-tags"></i> 标签</label>
+                <input type="text" id="in-tags" class="meta-input" placeholder="标签1 / 标签2 / 标签3">
+            </div>
+
+            <!-- 专栏 -->
+            <div class="meta-group">
+                <label><i class="fas fa-folder"></i> 所属专栏</label>
+                <select id="in-column" class="meta-select">
+                    <option value="">未加入专栏</option>
+                </select>
+            </div>
+
+            <!-- 摘要 -->
+            <div class="meta-group">
+                <label><i class="fas fa-align-left"></i> 文章摘要</label>
+                <textarea id="in-summary" class="meta-textarea" placeholder="输入文章摘要，用于列表展示..."></textarea>
+            </div>
+
+            <!-- 底部 AI 生成按钮 -->
+            <div class="meta-panel-footer">
+                <button onclick="aiAutoFill()" class="ai-generate-btn">
+                    <span>AI生成</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- 底部悬浮栏 -->
-    <footer class="editor-footer">
-        <div class="footer-left">
-            <div class="footer-branding">
-                <span style="font-family:'Bangers'; color:var(--p5-red); font-size:1.2rem;">又来</span>
-                <span style="font-weight:900; color:white; font-size:1.2rem; margin-left: 5px;">笔记</span>
-            </div>
-            <div class="word-count-info">
-                <span style="color: #888; font-size: 0.85rem;">字数:</span>
-                <span id="word-count-text"
-                    style="color: var(--p5-yellow); font-weight: bold; font-size: 0.85rem; margin-left: 5px;">0</span>
-            </div>
-        </div>
-
-        <div class="footer-actions">
-            <button class="action-btn btn-back" onclick="location.href='/'"
-                style="background: #444; margin-right: 10px;">返回</button>
-            <button class="action-btn btn-publish" onclick="publish()">发布文章</button>
-        </div>
-    </footer>
+    <!-- 遮罩层 -->
+    <div class="meta-overlay" id="metaOverlay" onclick="toggleMetaPanel()"></div>
 
     <script src="/js/model.js"></script>
     <script src="/js/editor.js"></script>
-
 </body>
 
 </html>

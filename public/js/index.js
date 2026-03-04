@@ -216,16 +216,17 @@ async function updateSiteStats() {
         const postCount = allPostsCache.length;
         document.getElementById('stat-post-count').innerText = postCount;
 
-        // 2. 最近更新时间
+        // 2. 最近更新时间（只显示日期部分）
         let lastUpdate = 'N/A';
         if (allPostsCache.length > 0) {
-            // 兼容 YYYY.MM.DD 和 YYYY.MM.DD HH:mm 格式
             const sorted = [...allPostsCache].sort((a, b) => {
                 const dateA = new Date(a.date.replace(/\./g, '-'));
                 const dateB = new Date(b.date.replace(/\./g, '-'));
                 return dateB - dateA;
             });
-            lastUpdate = sorted[0].date;
+            // 只取日期部分（YYYY.MM.DD）
+            const fullDate = sorted[0].date;
+            lastUpdate = fullDate.split(' ')[0];
         }
         document.getElementById('stat-last-update').innerText = lastUpdate;
 
