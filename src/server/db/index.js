@@ -23,6 +23,23 @@ db.exec(`
         key TEXT PRIMARY KEY,
         value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS comments (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL CHECK (type IN ('site', 'post')),
+        postId TEXT,
+        name TEXT NOT NULL,
+        content TEXT NOT NULL,
+        contact TEXT DEFAULT '',
+        createdAt TEXT NOT NULL,
+        status TEXT DEFAULT 'pending' CHECK (status IN ('approved', 'pending', 'rejected')),
+        parentId TEXT,
+        FOREIGN KEY (parentId) REFERENCES comments(id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_comments_type ON comments(type);
+    CREATE INDEX IF NOT EXISTS idx_comments_postId ON comments(postId);
+    CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status);
 `);
 
 // Initialize default visit count if not exists

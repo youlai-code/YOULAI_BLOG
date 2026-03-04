@@ -56,44 +56,41 @@
     </nav>
 
     <div class="container">
-        <div style="flex:3; display:flex; flex-direction:column;">
-            <main class="content-area">
-                <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
-                    <h1 style="margin-top:0;">网站留言板</h1>
-                    <p style="margin-top:10px; color:#444;">文章留言会显示在对应文章底部；这里是全站留言。</p>
+        <main class="content-area">
+            <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
+                <h1 style="margin-top:0;">网站留言板</h1>
+                <p style="margin-top:10px; color:#444;">文章留言会显示在对应文章底部；这里是全站留言。</p>
 
-                    <h3 style="margin-top:34px;">最新留言</h3>
-                    <div id="site-comments-list" class="comment-list" style="margin-top:12px;"></div>
+                <h3 style="margin-top:34px;">最新留言</h3>
+                <div id="site-comments-list" class="comment-list" style="margin-top:12px;"></div>
 
-                    <div class="comment-form" style="margin-top:34px; padding-top:34px; border-top:2px dashed #ccc;">
-                        <h3 style="margin-bottom:18px;">发表留言</h3>
-                        <div class="comment-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%;">
-                            <div class="comment-field" style="width: 100%;">
-                                <div class="comment-label">昵称</div>
-                                <div style="display: flex; position: relative; width: 100%;">
-                                    <input id="site-comment-name" placeholder="点击生成" class="comment-input" style="width: 100%; padding-right: 40px; box-sizing: border-box;">
-                                    <button id="generate-name-btn" type="button" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--p5-yellow); color: var(--p5-black); border: 2px solid var(--p5-black); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 0 var(--p5-black); transition: all 0.2s;">
-                                        <i class="fas fa-random"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="comment-field" style="width: 100%;">
-                                <div class="comment-label">联系方式（可选）</div>
-                                <input id="site-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input" style="width: 100%; box-sizing: border-box;">
+                <div class="comment-form" style="margin-top:34px; padding-top:34px; border-top:2px dashed #ccc;">
+                    <h3 style="margin-bottom:18px;">发表留言</h3>
+                    <div class="comment-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%;">
+                        <div class="comment-field" style="width: 100%;">
+                            <div class="comment-label">昵称</div>
+                            <div style="display: flex; position: relative; width: 100%;">
+                                <input id="site-comment-name" placeholder="点击生成" class="comment-input" style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+                                <button id="generate-name-btn" type="button" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--p5-yellow); color: var(--p5-black); border: 2px solid var(--p5-black); border-radius: 4px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 2px 2px 0 var(--p5-black); transition: all 0.2s;">
+                                    <i class="fas fa-random"></i>
+                                </button>
                             </div>
                         </div>
-                        <div class="comment-field" style="margin-top:14px;">
-                            <div class="comment-label">留言内容</div>
-                            <textarea id="site-comment-content" rows="5" placeholder="写下你的想法..." class="comment-textarea"></textarea>
+                        <div class="comment-field" style="width: 100%;">
+                            <div class="comment-label">联系方式（可选）</div>
+                            <input id="site-comment-contact" placeholder="邮箱/微信/网址（仅管理员可见）" class="comment-input" style="width: 100%; box-sizing: border-box;">
                         </div>
-                        <div class="comment-actions" style="margin-top:14px; justify-content: flex-end;">
-                            <div id="site-comment-status" class="comment-status" style="margin-right: auto;"></div>
-                            <button id="site-comment-submit" class="p5-cta-btn" type="button">提交</button>
-                        </div>
+                    </div>
+                    <div class="comment-field" style="margin-top:14px;">
+                        <div class="comment-label">留言内容</div>
+                        <textarea id="site-comment-content" rows="5" placeholder="写下你的想法..." class="comment-textarea"></textarea>
+                    </div>
+                    <div class="comment-actions" style="margin-top:14px; justify-content: flex-end;">
+                        <div id="site-comment-status" class="comment-status" style="margin-right: auto;"></div>
+                        <button id="site-comment-submit" class="p5-cta-btn" type="button">提交</button>
                     </div>
                 </div>
             </main>
-        </div>
 
         <aside class="sidebar-area" id="main-sidebar">
             <div class="widget-box" id="webmaster-widget">

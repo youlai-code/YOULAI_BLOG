@@ -76,7 +76,92 @@ async function savePortfolio(items) {
 }
 
 async function getComments() {
-    return await readJsonFile(COMMENTS_FILE, { site: [], posts: {} });
+    try {
+        // 从数据库读取所有评论
+        const rows = db.prepare('SELECT * FROM comments ORDER BY createdAt DESC').all();
+        
+        const result = { site: [], posts: {} };
+        
+        // 构建评论映射，用于关联回复
+        const commentMap = {};
+        
+        rows.forEach(row => {
+            const comment = {
+                id: row.id,
+                name: row.name,
+                content: row.content,
+                contact: row.contact || '',
+                createdAt: row.createdAt,
+                status: row.status,
+                replies: []
+            };
+            
+            if (row.postId) {
+                comment.postId = row.postId;
+            }
+            
+            commentMap[row.id] = comment;
+            
+            if (row.parentId) {
+                // 这是回复，关联到父评论
+                const parent = commentMap[row.parentId];
+                if (parent) {
+                    parent.replies.push(comment);
+                }
+            } else if (row.type === 'site') {
+                // 网站留言
+                result.site.push(comment);
+            } else if (row.type === 'post' && row.postId) {
+                // 文章评论
+                if (!result.posts[row.postId]) {
+                    result.posts[row.postId] = [];
+                }
+                result.posts[row.postId].push(comment);
+            }
+        });
+        
+        return result;
+    } catch (e) {
+        console.error('DB Error getComments:', e);
+        return { site: [], posts: {} };
+    }
+}
+
+async function saveComment(comment) {
+    try {
+        const { id, type, postId, name, content, contact, createdAt, status, parentId } = comment;
+        db.prepare(`
+            INSERT OR REPLACE INTO comments (id, type, postId, name, content, contact, createdAt, status, parentId)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(id, type, postId || null, name, content, contact || '', createdAt, status || 'pending', parentId || null);
+        return true;
+    } catch (e) {
+        console.error('DB Error saveComment:', e);
+        return false;
+    }
+}
+
+async function updateCommentStatus(id, status) {
+    try {
+        db.prepare('UPDATE comments SET status = ? WHERE id = ?').run(status, id);
+        return true;
+    } catch (e) {
+        console.error('DB Error updateCommentStatus:', e);
+        return false;
+    }
+}
+
+async function deleteComment(id) {
+    try {
+        // 先删除所有回复
+        db.prepare('DELETE FROM comments WHERE parentId = ?').run(id);
+        // 再删除主评论
+        db.prepare('DELETE FROM comments WHERE id = ?').run(id);
+        return true;
+    } catch (e) {
+        console.error('DB Error deleteComment:', e);
+        return false;
+    }
 }
 
 async function getVisits() {
@@ -198,6 +283,9 @@ module.exports = {
     getPortfolio,
     savePortfolio,
     getComments,
+    saveComment,
+    updateCommentStatus,
+    deleteComment,
     getVisits,
     incrementVisit,
     getEnvTemplate,

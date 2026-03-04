@@ -1,75 +1,57 @@
-const { readJsonFileSafe, writeJsonFileAtomic } = require('../utils/jsonFile');
-const { COMMENTS_FILE } = require('../utils/paths');
+const db = require('../db');
 const { normalizeText } = require('../utils/text');
 const { generateId } = require('../utils/ids');
 
-async function getCommentsStore() {
-    const store = await readJsonFileSafe(COMMENTS_FILE, { site: [], posts: {} });
-    const normalized = {
-        site: Array.isArray(store.site) ? store.site : [],
-        posts: store.posts && typeof store.posts === 'object' ? store.posts : {}
-    };
-
-    normalized.site = normalized.site.map(c => {
-        const status = c?.status ? String(c.status) : 'approved';
-        return {
-            id: String(c?.id || generateId('site')),
-            name: normalizeText(c?.name, 24) || '匿名访客',
-            content: normalizeText(c?.content, 800),
-            contact: normalizeText(c?.contact, 80),
-            createdAt: c?.createdAt ? String(c.createdAt) : new Date().toISOString(),
-            status: ['pending', 'approved', 'rejected'].includes(status) ? status : 'approved',
-            replies: Array.isArray(c?.replies) ? c.replies : []
-        };
-    });
-
-    Object.keys(normalized.posts).forEach(postId => {
-        const list = normalized.posts[postId];
-        if (!Array.isArray(list)) {
-            normalized.posts[postId] = [];
-            return;
-        }
-        normalized.posts[postId] = list.map(c => {
-            const status = c?.status ? String(c.status) : 'approved';
-            return {
-                id: String(c?.id || generateId('post')),
-                postId: String(c?.postId || postId),
-                name: normalizeText(c?.name, 24) || '匿名访客',
-                content: normalizeText(c?.content, 800),
-                contact: normalizeText(c?.contact, 80),
-                createdAt: c?.createdAt ? String(c.createdAt) : new Date().toISOString(),
-                status: ['pending', 'approved', 'rejected'].includes(status) ? status : 'approved',
-                replies: Array.isArray(c?.replies) ? c.replies : []
-            };
-        });
-    });
-
-    return normalized;
-}
-
-async function saveCommentsStore(store) {
-    const safe = {
-        site: Array.isArray(store.site) ? store.site : [],
-        posts: store.posts && typeof store.posts === 'object' ? store.posts : {}
-    };
-    await writeJsonFileAtomic(COMMENTS_FILE, safe);
-}
-
 async function getSiteComments(status = 'approved') {
-    const store = await getCommentsStore();
-    const list = Array.isArray(store.site) ? store.site : [];
-    
-    if (status === 'approved') {
-        return list.filter(c => c.status === 'approved').map(c => ({
-            id: c.id,
-            name: c.name,
-            content: c.content,
-            createdAt: c.createdAt,
-            replies: c.replies || []
+    try {
+        let rows;
+        if (status === 'all') {
+            rows = db.prepare(`
+                SELECT * FROM comments 
+                WHERE type = 'site' AND parentId IS NULL 
+                ORDER BY createdAt DESC
+            `).all();
+        } else {
+            rows = db.prepare(`
+                SELECT * FROM comments 
+                WHERE type = 'site' AND parentId IS NULL AND status = ?
+                ORDER BY createdAt DESC
+            `).all(status);
+        }
+        
+        return rows.map(row => ({
+            id: row.id,
+            name: row.name,
+            content: row.content,
+            createdAt: row.createdAt,
+            status: row.status,
+            replies: getReplies(row.id)
         }));
+    } catch (e) {
+        console.error('DB Error getSiteComments:', e);
+        return [];
     }
-    
-    return list.filter(c => c.status === status);
+}
+
+function getReplies(parentId) {
+    try {
+        const rows = db.prepare(`
+            SELECT * FROM comments 
+            WHERE parentId = ? 
+            ORDER BY createdAt ASC
+        `).all(parentId);
+        
+        return rows.map(row => ({
+            id: row.id,
+            name: row.name,
+            content: row.content,
+            createdAt: row.createdAt,
+            status: row.status
+        }));
+    } catch (e) {
+        console.error('DB Error getReplies:', e);
+        return [];
+    }
 }
 
 async function addSiteComment(data) {
@@ -79,22 +61,26 @@ async function addSiteComment(data) {
         throw new Error('EMPTY_CONTENT');
     }
 
-    const store = await getCommentsStore();
-    const item = {
-        id: generateId('site'),
-        name: normalizeText(name, 24) || '匿名访客',
-        content: normalizeText(content, 800),
-        contact: normalizeText(contact, 80),
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-        replies: []
-    };
+    const id = generateId('site');
+    const now = new Date().toISOString();
     
-    store.site = Array.isArray(store.site) ? store.site : [];
-    store.site.push(item);
-    await saveCommentsStore(store);
-    
-    return item;
+    try {
+        db.prepare(`
+            INSERT INTO comments (id, type, name, content, contact, createdAt, status, parentId)
+            VALUES (?, 'site', ?, ?, ?, ?, 'pending', NULL)
+        `).run(id, normalizeText(name, 24) || '匿名访客', normalizeText(content, 800), normalizeText(contact, 80), now);
+        
+        return {
+            id,
+            name: normalizeText(name, 24) || '匿名访客',
+            content: normalizeText(content, 800),
+            createdAt: now,
+            status: 'pending'
+        };
+    } catch (e) {
+        console.error('DB Error addSiteComment:', e);
+        throw e;
+    }
 }
 
 async function addSiteReply(commentId, data) {
@@ -107,50 +93,59 @@ async function addSiteReply(commentId, data) {
         throw new Error('NO_COMMENT_ID');
     }
 
-    const store = await getCommentsStore();
-    store.site = Array.isArray(store.site) ? store.site : [];
-    
-    let found = false;
-    store.site = store.site.map(c => {
-        if (c.id !== commentId) return c;
-        found = true;
-        const replies = Array.isArray(c.replies) ? c.replies : [];
-        return {
-            ...c,
-            replies: [...replies, {
-                id: generateId('reply'),
-                name: normalizeText(name, 24) || '匿名访客',
-                content: normalizeText(content, 800),
-                contact: normalizeText(contact, 80),
-                createdAt: new Date().toISOString(),
-                status: 'pending'
-            }]
-        };
-    });
-    
-    if (!found) {
+    // 检查父评论是否存在
+    const parent = db.prepare('SELECT id FROM comments WHERE id = ?').get(commentId);
+    if (!parent) {
         throw new Error('NOT_FOUND');
     }
+
+    const id = generateId('reply');
+    const now = new Date().toISOString();
     
-    await saveCommentsStore(store);
-    return true;
+    try {
+        db.prepare(`
+            INSERT INTO comments (id, type, name, content, contact, createdAt, status, parentId)
+            VALUES (?, 'site', ?, ?, ?, ?, 'pending', ?)
+        `).run(id, normalizeText(name, 24) || '匿名访客', normalizeText(content, 800), normalizeText(contact, 80), now, commentId);
+        
+        return true;
+    } catch (e) {
+        console.error('DB Error addSiteReply:', e);
+        throw e;
+    }
 }
 
 async function getPostComments(postId, status = 'approved') {
-    const store = await getCommentsStore();
-    const list = Array.isArray(store.posts?.[postId]) ? store.posts[postId] : [];
+    if (!postId) return [];
     
-    if (status === 'approved') {
-        return list.filter(c => c.status === 'approved').map(c => ({
-            id: c.id,
-            postId: c.postId,
-            name: c.name,
-            content: c.content,
-            createdAt: c.createdAt
+    try {
+        let rows;
+        if (status === 'all') {
+            rows = db.prepare(`
+                SELECT * FROM comments 
+                WHERE type = 'post' AND postId = ? AND parentId IS NULL 
+                ORDER BY createdAt DESC
+            `).all(postId);
+        } else {
+            rows = db.prepare(`
+                SELECT * FROM comments 
+                WHERE type = 'post' AND postId = ? AND parentId IS NULL AND status = ?
+                ORDER BY createdAt DESC
+            `).all(postId, status);
+        }
+        
+        return rows.map(row => ({
+            id: row.id,
+            postId: row.postId,
+            name: row.name,
+            content: row.content,
+            createdAt: row.createdAt,
+            status: row.status
         }));
+    } catch (e) {
+        console.error('DB Error getPostComments:', e);
+        return [];
     }
-    
-    return list.filter(c => c.status === status);
 }
 
 async function addPostComment(postId, data) {
@@ -159,30 +154,31 @@ async function addPostComment(postId, data) {
     if (!content || !content.trim()) {
         throw new Error('EMPTY_CONTENT');
     }
-
-    const store = await getCommentsStore();
-    
-    if (!store.posts || typeof store.posts !== 'object') {
-        store.posts = {};
-    }
-    if (!Array.isArray(store.posts[postId])) {
-        store.posts[postId] = [];
+    if (!postId) {
+        throw new Error('NO_POST_ID');
     }
 
-    const item = {
-        id: generateId('post'),
-        postId,
-        name: normalizeText(name, 24) || '匿名访客',
-        content: normalizeText(content, 800),
-        contact: normalizeText(contact, 80),
-        createdAt: new Date().toISOString(),
-        status: 'pending'
-    };
+    const id = generateId('post');
+    const now = new Date().toISOString();
     
-    store.posts[postId].push(item);
-    await saveCommentsStore(store);
-    
-    return item;
+    try {
+        db.prepare(`
+            INSERT INTO comments (id, type, postId, name, content, contact, createdAt, status, parentId)
+            VALUES (?, 'post', ?, ?, ?, ?, ?, 'pending', NULL)
+        `).run(id, postId, normalizeText(name, 24) || '匿名访客', normalizeText(content, 800), normalizeText(contact, 80), now);
+        
+        return {
+            id,
+            postId,
+            name: normalizeText(name, 24) || '匿名访客',
+            content: normalizeText(content, 800),
+            createdAt: now,
+            status: 'pending'
+        };
+    } catch (e) {
+        console.error('DB Error addPostComment:', e);
+        throw e;
+    }
 }
 
 async function moderateComment(scope, commentId, action, postId = null, replyId = null) {
@@ -196,38 +192,28 @@ async function moderateComment(scope, commentId, action, postId = null, replyId 
         throw new Error('NO_COMMENT_ID');
     }
 
-    const store = await getCommentsStore();
-    let found = false;
+    try {
+        // 检查评论是否存在
+        const comment = db.prepare('SELECT id FROM comments WHERE id = ?').get(commentId);
+        if (!comment) {
+            throw new Error('NOT_FOUND');
+        }
 
-    if (scope === 'site') {
-        store.site = Array.isArray(store.site) ? store.site : [];
-        store.site = store.site.map(c => {
-            if (c.id !== commentId) return c;
-            found = true;
-            if (action === 'approve') return { ...c, status: 'approved' };
-            if (action === 'reject') return { ...c, status: 'rejected' };
-            return c;
-        }).filter(c => !(found && action === 'delete' && c.id === commentId));
+        if (action === 'delete') {
+            // 先删除所有回复
+            db.prepare('DELETE FROM comments WHERE parentId = ?').run(commentId);
+            // 再删除主评论
+            db.prepare('DELETE FROM comments WHERE id = ?').run(commentId);
+        } else {
+            const newStatus = action === 'approve' ? 'approved' : 'rejected';
+            db.prepare('UPDATE comments SET status = ? WHERE id = ?').run(newStatus, commentId);
+        }
+        
+        return true;
+    } catch (e) {
+        console.error('DB Error moderateComment:', e);
+        throw e;
     }
-
-    if (scope === 'post') {
-        if (!postId) throw new Error('NO_POST_ID');
-        if (!store.posts || typeof store.posts !== 'object') store.posts = {};
-        const list = Array.isArray(store.posts[postId]) ? store.posts[postId] : [];
-        store.posts[postId] = list
-            .map(c => {
-                if (c.id !== commentId) return c;
-                found = true;
-                if (action === 'approve') return { ...c, status: 'approved' };
-                if (action === 'reject') return { ...c, status: 'rejected' };
-                return c;
-            })
-            .filter(c => !(found && action === 'delete' && c.id === commentId));
-    }
-
-    if (!found) throw new Error('NOT_FOUND');
-    await saveCommentsStore(store);
-    return true;
 }
 
 async function moderateSiteReply(commentId, replyId, action) {
@@ -238,60 +224,134 @@ async function moderateSiteReply(commentId, replyId, action) {
         throw new Error('NO_COMMENT_ID');
     }
 
-    const store = await getCommentsStore();
-    store.site = Array.isArray(store.site) ? store.site : [];
-    
-    let commentFound = false;
-    let replyFound = false;
-    
-    store.site = store.site.map(c => {
-        if (c.id !== commentId) return c;
-        commentFound = true;
-        const replies = Array.isArray(c.replies) ? c.replies : [];
+    try {
+        // 检查回复是否存在
+        const reply = db.prepare('SELECT id FROM comments WHERE id = ? AND parentId = ?').get(replyId, commentId);
+        if (!reply) {
+            throw new Error('NOT_FOUND');
+        }
+
+        if (action === 'delete') {
+            db.prepare('DELETE FROM comments WHERE id = ?').run(replyId);
+        } else {
+            const newStatus = action === 'approve' ? 'approved' : 'rejected';
+            db.prepare('UPDATE comments SET status = ? WHERE id = ?').run(newStatus, replyId);
+        }
         
-        const filteredReplies = replies.map(r => {
-            if (r.id !== replyId) return r;
-            replyFound = true;
-            if (action === 'approve') return { ...r, status: 'approved' };
-            if (action === 'reject') return { ...r, status: 'rejected' };
-            return r;
-        }).filter(r => !(replyFound && action === 'delete' && r.id === replyId));
-        
-        return { ...c, replies: filteredReplies };
-    });
-    
-    if (!commentFound || !replyFound) {
-        throw new Error('NOT_FOUND');
+        return true;
+    } catch (e) {
+        console.error('DB Error moderateSiteReply:', e);
+        throw e;
     }
-    
-    await saveCommentsStore(store);
-    return true;
 }
 
 async function getAdminComments(scope = 'all', status = 'pending', postId = null) {
-    const store = await getCommentsStore();
-    const statuses = ['pending', 'approved', 'rejected'];
-    const st = statuses.includes(status) ? status : 'pending';
-
     const result = { site: [], posts: [] };
     
-    if (scope === 'site' || scope === 'all') {
-        result.site = (store.site || []).filter(c => c.status === st);
+    try {
+        if (scope === 'site' || scope === 'all') {
+            const rows = db.prepare(`
+                SELECT * FROM comments 
+                WHERE type = 'site' AND parentId IS NULL AND status = ?
+                ORDER BY createdAt DESC
+            `).all(status);
+            
+            result.site = rows.map(row => ({
+                id: row.id,
+                name: row.name,
+                content: row.content,
+                contact: row.contact,
+                createdAt: row.createdAt,
+                status: row.status,
+                replies: getReplies(row.id)
+            }));
+        }
+        
+        if (scope === 'post' || scope === 'all') {
+            let query = `
+                SELECT * FROM comments 
+                WHERE type = 'post' AND parentId IS NULL AND status = ?
+            `;
+            const params = [status];
+            
+            if (postId) {
+                query += ' AND postId = ?';
+                params.push(postId);
+            }
+            
+            query += ' ORDER BY createdAt DESC';
+            
+            const rows = db.prepare(query).all(...params);
+            
+            result.posts = rows.map(row => ({
+                id: row.id,
+                postId: row.postId,
+                name: row.name,
+                content: row.content,
+                contact: row.contact,
+                createdAt: row.createdAt,
+                status: row.status
+            }));
+        }
+        
+        return result;
+    } catch (e) {
+        console.error('DB Error getAdminComments:', e);
+        return result;
     }
-    if (scope === 'post' || scope === 'all') {
-        const keys = postId ? [postId] : Object.keys(store.posts || {});
-        keys.forEach(pid => {
-            const list = Array.isArray(store.posts?.[pid]) ? store.posts[pid] : [];
-            list.filter(c => c.status === st).forEach(c => result.posts.push(c));
-        });
+}
+
+// 数据迁移函数 - 从JSON文件迁移到数据库
+async function migrateFromJson(jsonData) {
+    try {
+        // 迁移网站留言
+        if (jsonData.site && Array.isArray(jsonData.site)) {
+            for (const comment of jsonData.site) {
+                const { id, name, content, contact, createdAt, status } = comment;
+                
+                // 插入主评论
+                db.prepare(`
+                    INSERT OR IGNORE INTO comments (id, type, name, content, contact, createdAt, status, parentId)
+                    VALUES (?, 'site', ?, ?, ?, ?, ?, NULL)
+                `).run(id, name, content, contact || '', createdAt, status || 'approved');
+                
+                // 迁移回复
+                if (comment.replies && Array.isArray(comment.replies)) {
+                    for (const reply of comment.replies) {
+                        db.prepare(`
+                            INSERT OR IGNORE INTO comments (id, type, name, content, contact, createdAt, status, parentId)
+                            VALUES (?, 'site', ?, ?, ?, ?, ?, ?)
+                        `).run(reply.id, reply.name, reply.content, reply.contact || '', reply.createdAt, reply.status || 'approved', id);
+                    }
+                }
+            }
+        }
+        
+        // 迁移文章评论
+        if (jsonData.posts && typeof jsonData.posts === 'object') {
+            for (const [postId, comments] of Object.entries(jsonData.posts)) {
+                if (Array.isArray(comments)) {
+                    for (const comment of comments) {
+                        const { id, name, content, contact, createdAt, status } = comment;
+                        
+                        db.prepare(`
+                            INSERT OR IGNORE INTO comments (id, type, postId, name, content, contact, createdAt, status, parentId)
+                            VALUES (?, 'post', ?, ?, ?, ?, ?, ?, NULL)
+                        `).run(id, postId, name, content, contact || '', createdAt, status || 'approved');
+                    }
+                }
+            }
+        }
+        
+        console.log('Comments migration completed successfully');
+        return true;
+    } catch (e) {
+        console.error('Migration error:', e);
+        return false;
     }
-    
-    return result;
 }
 
 module.exports = {
-    getCommentsStore,
-    saveCommentsStore,
     getSiteComments,
     addSiteComment,
     addSiteReply,
@@ -299,5 +359,6 @@ module.exports = {
     addPostComment,
     moderateComment,
     moderateSiteReply,
-    getAdminComments
+    getAdminComments,
+    migrateFromJson
 };

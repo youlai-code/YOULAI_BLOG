@@ -3,24 +3,22 @@ const path = require('path');
 const archiver = require('archiver');
 const schedule = require('node-schedule');
 
-// 配置
 const BACKUP_DIR = path.join(__dirname, 'backups');
-const SOURCE_DIR = path.join(__dirname, 'public', 'posts');
-const MAX_BACKUPS = 7; // 保留最近7天的备份
+const POSTS_DIR = path.join(__dirname, 'public', 'posts');
+const DATABASE_FILE = path.join(__dirname, 'data', 'database.sqlite');
+const MAX_BACKUPS = 7;
 
-// 确保备份目录存在
 if (!fs.existsSync(BACKUP_DIR)) {
-    fs.mkdirSync(BACKUP_DIR);
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
 
-// 执行备份函数
 function performBackup() {
     return new Promise((resolve, reject) => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-        const filename = `posts_backup_${timestamp}.zip`;
+        const filename = `backup_${timestamp}.zip`;
         const output = fs.createWriteStream(path.join(BACKUP_DIR, filename));
         const archive = archiver('zip', {
-            zlib: { level: 9 } // 最高压缩级别
+            zlib: { level: 9 }
         });
 
         console.log(`[BACKUP] Starting backup: ${filename}...`);
@@ -46,14 +44,16 @@ function performBackup() {
 
         archive.pipe(output);
 
-        // 备份 public/posts 目录
-        archive.directory(SOURCE_DIR, false);
+        archive.directory(POSTS_DIR, 'posts');
+
+        if (fs.existsSync(DATABASE_FILE)) {
+            archive.file(DATABASE_FILE, { name: 'database.sqlite' });
+        }
 
         archive.finalize();
     });
 }
 
-// 清理旧备份
 function cleanOldBackups() {
     fs.readdir(BACKUP_DIR, (err, files) => {
         if (err) {
@@ -61,11 +61,10 @@ function cleanOldBackups() {
             return;
         }
 
-        const zipFiles = files.filter(file => file.startsWith('posts_backup_') && file.endsWith('.zip'));
+        const zipFiles = files.filter(file => file.startsWith('backup_') && file.endsWith('.zip'));
         
         if (zipFiles.length > MAX_BACKUPS) {
-            // 按文件名排序（因为文件名包含时间戳，所以字典序即时间序）
-            zipFiles.sort(); 
+            zipFiles.sort();
             
             const filesToDelete = zipFiles.slice(0, zipFiles.length - MAX_BACKUPS);
             
@@ -80,10 +79,7 @@ function cleanOldBackups() {
     });
 }
 
-// 初始化定时任务
 function initBackupTask() {
-    // 每天 02:00 执行
-    // Cron 格式: 分 时 日 月 周
     const job = schedule.scheduleJob('0 2 * * *', function() {
         console.log('[BACKUP] Triggered scheduled backup task.');
         performBackup()
@@ -93,13 +89,11 @@ function initBackupTask() {
     console.log('[BACKUP] Backup task scheduled for 02:00 daily.');
 }
 
-// 导出
 module.exports = {
     performBackup,
     initBackupTask
 };
 
-// 如果直接运行此脚本 (node backup_service.js)，则立即执行一次备份
 if (require.main === module) {
     performBackup()
         .then(() => console.log('Manual backup completed.'))
