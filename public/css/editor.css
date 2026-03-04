@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+SC:wght@400;700;900&display=swap');
 
 :root {
     --p5-red: #D20505;
@@ -212,6 +212,8 @@ body {
     line-height: 1.6;
     resize: none;
     outline: none;
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }
 
 .preview-pane {

@@ -69,8 +69,13 @@ async function initApp() {
         allPostsCache = await postsRes.json();
 
         currentFilteredPosts = allPostsCache;
-        setHomeTopVisible(true);
-        renderPage(1);
+        
+        // 只有在首页才显示文章列表
+        const blogListContainer = document.getElementById('blog-list-container');
+        if (blogListContainer) {
+            setHomeTopVisible(true);
+            renderPage(1);
+        }
 
         setTimeout(() => {
             updateSiteStats();
@@ -78,20 +83,48 @@ async function initApp() {
             renderRandomPosts();
         }, 0);
 
+        // 处理从其他页面跳转过来的情况
+        const returnPage = localStorage.getItem('returnPage');
+        if (returnPage) {
+            localStorage.removeItem('returnPage');
+            switch (returnPage) {
+                case 'discovery':
+                    showDiscoveryPage();
+                    break;
+                case 'portfolio':
+                    showPortfolioPage();
+                    break;
+                case 'about':
+                    showAboutPage();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // 处理搜索参数
         const params = new URLSearchParams(window.location.search);
         const postId = params.get('id');
+        const searchQuery = params.get('search');
+        
         if (postId) {
             await showPost(postId, false);
+        } else if (searchQuery) {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.value = searchQuery;
+            searchPosts(searchQuery);
         }
     } catch (err) {
         setHomeTopVisible(true);
-        container.innerHTML = `
-            <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red; transform:rotate(-2deg);">
-                <h2 style="font-family:'Bangers'; color:red;">连接错误</h2>
-                <p>无法连接到 Phantom Network (posts.json).</p>
-                <p>请确保已运行: node server.js</p>
-            </div>
-        `;
+        if (container) {
+            container.innerHTML = `
+                <div style="background:var(--p5-black); color:white; padding:20px; border:2px solid red; transform:rotate(-2deg);">
+                    <h2 style="font-family:'Bangers'; color:red;">连接错误</h2>
+                    <p>无法连接到 Phantom Network (posts.json).</p>
+                    <p>请确保已运行: node server.js</p>
+                </div>
+            `;
+        }
     }
 }
 
@@ -642,10 +675,11 @@ async function showPortfolioPage() {
     container.innerHTML = `<h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">LOADING PORTFOLIO...</h2>`;
 
     try {
-        const response = await fetch('/portfolio.json');
+        const response = await fetch('/api/portfolio');
         if (!response.ok) throw new Error("Portfolio data not found");
         
-        const portfolioItems = await response.json();
+        const data = await response.json();
+        const portfolioItems = data?.items || [];
 
         if (!Array.isArray(portfolioItems) || portfolioItems.length === 0) {
             container.innerHTML = `
@@ -663,7 +697,6 @@ async function showPortfolioPage() {
         const header = document.createElement('div');
         header.style.cssText = 'text-align:center; margin-bottom:40px;';
         header.innerHTML = `
-            <h2 style="font-family:'Bangers'; font-size:2.5rem; color:var(--p5-yellow); text-shadow:3px 3px 0 var(--p5-black);">MY WORKS</h2>
             <p style="color:#aaa; margin-top:10px; font-size:0.95rem;">独立开发的作品集合，持续更新中...</p>
         `;
         container.appendChild(header);
@@ -672,8 +705,8 @@ async function showPortfolioPage() {
         grid.className = 'portfolio-grid';
         grid.style.cssText = `
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(192px, 1fr));
+            gap: 20px;
             padding: 0 20px;
         `;
 
@@ -684,8 +717,8 @@ async function showPortfolioPage() {
             card.className = 'portfolio-card';
             card.style.cssText = `
                 background: var(--p5-white);
-                border: 4px solid var(--p5-black);
-                box-shadow: 8px 8px 0 var(--p5-black);
+                border: 3px solid var(--p5-black);
+                box-shadow: 5px 5px 0 var(--p5-black);
                 transform: rotate(${rotate}deg);
                 transition: all 0.3s ease;
                 overflow: hidden;
@@ -693,47 +726,64 @@ async function showPortfolioPage() {
             `;
 
             card.onmouseover = () => {
-                card.style.transform = `rotate(0deg) translateY(-8px)`;
-                card.style.boxShadow = '12px 16px 0 var(--p5-black)';
+                card.style.transform = `rotate(0deg) translateY(-5px)`;
+                card.style.boxShadow = '8px 10px 0 var(--p5-black)';
                 card.style.zIndex = '10';
             };
             card.onmouseout = () => {
                 card.style.transform = `rotate(${rotate}deg)`;
-                card.style.boxShadow = '8px 8px 0 var(--p5-black)';
+                card.style.boxShadow = '5px 5px 0 var(--p5-black)';
                 card.style.zIndex = '1';
             };
 
             const tagsHtml = Array.isArray(item.tags) 
-                ? item.tags.map(tag => `<span style="background:var(--p5-yellow); color:var(--p5-black); padding:2px 8px; font-size:0.75rem; font-weight:bold; border:2px solid var(--p5-black); margin-right:5px;">${tag}</span>`).join('')
+                ? item.tags.map(tag => `<span style="background:var(--p5-yellow); color:var(--p5-black); padding:1px 5px; font-size:0.6rem; font-weight:bold; border:1px solid var(--p5-black); margin-right:3px;">${tag}</span>`).join('')
                 : '';
 
             const statusColor = item.status === '已上线' ? 'var(--p5-red)' : '#666';
 
-            card.innerHTML = `
-                <div style="position:relative; height:180px; overflow:hidden; border-bottom:4px solid var(--p5-black);">
+            // 构建卡片内容
+            const cardContent = `
+                <div style="position:relative; height:180px; overflow:hidden; border-bottom:3px solid var(--p5-black);">
                     ${item.cover 
                         ? `<img src="${item.cover}" alt="${item.name}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://placehold.co/400x200?text=No+Image'">`
-                        : `<div style="width:100%; height:100%; background:var(--p5-black); display:flex; align-items:center; justify-content:center;"><i class="fas fa-box" style="font-size:4rem; color:var(--p5-yellow);"></i></div>`
+                        : `<div style="width:100%; height:100%; background:var(--p5-black); display:flex; align-items:center; justify-content:center;"><i class="fas fa-box" style="font-size:3rem; color:var(--p5-yellow);"></i></div>`
                     }
-                    <div style="position:absolute; top:10px; right:10px; background:${statusColor}; color:white; padding:4px 12px; font-size:0.75rem; font-weight:bold; border:2px solid var(--p5-black);">
-                        ${item.status || '开发中'}
+                    <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; gap:4px; align-items:flex-end;">
+                        <div style="background:${statusColor}; color:white; padding:2px 8px; font-size:0.6rem; font-weight:bold; border:1px solid var(--p5-black);">
+                            ${item.status || '开发中'}
+                        </div>
+                        ${item.url 
+                            ? `<div style="background:var(--p5-yellow); color:var(--p5-black); padding:2px 8px; font-size:0.6rem; font-weight:bold; border:1px solid var(--p5-black);">
+                                <i class="fas fa-external-link-alt"></i> 可访问
+                            </div>`
+                            : ''
+                        }
                     </div>
                 </div>
-                <div style="padding:20px;">
-                    <h3 style="font-family:'Bangers'; font-size:1.5rem; color:var(--p5-black); margin-bottom:10px; letter-spacing:1px;">${item.name}</h3>
-                    <p style="color:#555; font-size:0.9rem; line-height:1.6; margin-bottom:15px; min-height:50px;">${item.description}</p>
-                    <div style="margin-bottom:15px;">${tagsHtml}</div>
-                    ${item.url 
-                        ? `<a href="${item.url}" target="_blank" rel="noopener noreferrer" 
-                            style="display:inline-block; background:var(--p5-red); color:white; padding:10px 25px; font-family:'Bangers'; font-size:1rem; text-decoration:none; border:3px solid var(--p5-black); box-shadow:4px 4px 0 var(--p5-black); transition:all 0.2s;"
-                            onmouseover="this.style.transform='translate(-2px, -2px)'; this.style.boxShadow='6px 6px 0 var(--p5-black)';"
-                            onmouseout="this.style.transform='translate(0, 0)'; this.style.boxShadow='4px 4px 0 var(--p5-black)';">
-                            <i class="fas fa-external-link-alt"></i> 访问
-                        </a>`
-                        : ''
-                    }
+                <div style="padding:10px;">
+                    <h3 style="font-family:'Noto Sans SC', sans-serif; font-size:1rem; color:var(--p5-black); margin-bottom:6px; font-weight:bold;">${item.name}</h3>
+                    <p style="color:#555; font-size:0.7rem; line-height:1.3; margin-bottom:8px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis;">${item.description}</p>
+                    <div style="margin-bottom:8px; display:flex; flex-wrap:wrap; align-items:center; gap:5px;">
+                        ${tagsHtml}
+                    </div>
                 </div>
             `;
+
+            // 如果有URL，让整个卡片可点击
+            if (item.url) {
+                const linkWrapper = document.createElement('a');
+                linkWrapper.href = item.url;
+                linkWrapper.target = '_blank';
+                linkWrapper.rel = 'noopener noreferrer';
+                linkWrapper.style.display = 'block';
+                linkWrapper.style.textDecoration = 'none';
+                linkWrapper.style.color = 'inherit';
+                linkWrapper.innerHTML = cardContent;
+                card.appendChild(linkWrapper);
+            } else {
+                card.innerHTML = cardContent;
+            }
 
             grid.appendChild(card);
         });

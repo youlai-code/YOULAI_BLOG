@@ -117,7 +117,7 @@ function renderColumns(columns, posts) {
     root.appendChild(grid);
 }
 
-async function init() {
+async function initColumns() {
     checkAdminAndInitButtons();
     
     const root = document.getElementById('columns-list');
@@ -148,5 +148,8 @@ async function init() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// 导出函数供其他脚本调用
+if (typeof window !== 'undefined') {
+    window.initColumns = initColumns;
+}
 

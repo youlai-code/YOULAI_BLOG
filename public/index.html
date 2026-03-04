@@ -48,12 +48,12 @@
         </div>
         <div class="nav-right">
             <div class="menu-list">
-                <a href="#" id="btn-home" class="menu-btn active" onclick="filterPosts('HOME'); return false;">首页</a>
+                <a href="/" id="btn-home" class="menu-btn active">首页</a>
                 <a href="/columns" id="btn-columns" class="menu-btn">专栏</a>
                 <a href="/message-board" id="btn-message-board" class="menu-btn">留言板</a>
-                <a href="#" id="btn-discovery" class="menu-btn" onclick="showDiscoveryPage(); return false;">发现</a>
-                <a href="#" id="btn-portfolio" class="menu-btn" onclick="showPortfolioPage(); return false;">作品集</a>
-                <a href="#" id="btn-about" class="menu-btn" onclick="showAboutPage(); return false;">关于</a>
+                <a href="/discovery" id="btn-discovery" class="menu-btn">发现</a>
+                <a href="/portfolio" id="btn-portfolio" class="menu-btn">作品集</a>
+                <a href="/about" id="btn-about" class="menu-btn">关于</a>
             </div>
             <div class="search-box">
                 <input type="text" id="search-input" placeholder="搜索日志..." oninput="searchPosts(this.value)">
@@ -178,21 +178,21 @@
             <div class="footer-column">
                 <div class="footer-heading">网站导航</div>
                 <ul class="footer-links">
-                    <li><a href="#" onclick="filterPosts('HOME'); return false;">首页</a></li>
+                    <li><a href="/">首页</a></li>
                     <li><a href="/columns">专栏</a></li>
                     <li><a href="/message-board">留言板</a></li>
-                    <li><a href="#" onclick="showPortfolioPage(); return false;">作品集</a></li>
-                    <li><a href="#" onclick="showAboutPage(); return false;">关于</a></li>
+                    <li><a href="/portfolio">作品集</a></li>
+                    <li><a href="/about">关于</a></li>
                 </ul>
             </div>
             
             <div class="footer-column">
                 <div class="footer-heading">资源链接</div>
                 <ul class="footer-links">
-                    <li><a href="#" onclick="showDiscoveryPage(); return false;">发现</a></li>
-                    <li><a href="#" onclick="filterPosts('Unity3D'); return false;">Unity3D</a></li>
-                    <li><a href="#" onclick="filterPosts('C#'); return false;">C#</a></li>
-                    <li><a href="#" onclick="filterPosts('Web'); return false;">Web开发</a></li>
+                    <li><a href="/discovery">发现</a></li>
+                    <li><a href="/?search=Unity3D">Unity3D</a></li>
+                    <li><a href="/?search=C#">C#</a></li>
+                    <li><a href="/?search=Web">Web开发</a></li>
                 </ul>
             </div>
             
@@ -213,7 +213,7 @@
             <div class="footer-bottom-inner">
                 <span class="footer-copyright"><span id="footer-copyright" style="font-weight:900; color:var(--p5-yellow);">YOULAI NOTE</span> 2025 - 2026. All rights reserved.</span>
                 <span class="footer-divider">|</span>
-                <a href="#" onclick="showAboutPage(); return false;">关于我们</a>
+                <a href="/about">关于我们</a>
                 <span class="footer-divider">|</span>
                 <a href="https://beian.miit.gov.cn/">湘ICP备2026001893号</a>
                 <span class="footer-divider">|</span>

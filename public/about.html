@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>专栏 | 又来笔记</title>
-    <meta name="description" content="专栏：按主题聚合文章。">
+    <title>关于 | 又来笔记</title>
+    <meta name="description" content="关于又来笔记 - 独立开发者技术博客，分享Unity3D、C#、Web全栈开发经验。">
     <link rel="icon" type="image/jpeg" href="/img/icon.png">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/background.css">
@@ -34,22 +34,22 @@
 
     <nav class="top-nav">
         <div class="marquee-wrap">
-            <div class="marquee-content">专栏页面 - 按主题聚合文章</div>
+            <div class="marquee-content">加载中...</div>
         </div>
         <div class="nav-left">
             <a href="/" class="brand-logo">YOULAI NOTE</a>
         </div>
         <div class="nav-right">
             <div class="menu-list">
-                <a href="/" class="menu-btn">首页</a>
-                <a href="/columns" class="menu-btn active">专栏</a>
-                <a href="/message-board" class="menu-btn">留言板</a>
-                <a href="/" class="menu-btn" onclick="localStorage.setItem('returnPage', 'discovery');">发现</a>
-                <a href="/" class="menu-btn" onclick="localStorage.setItem('returnPage', 'portfolio');">作品集</a>
-                <a href="/" class="menu-btn" onclick="localStorage.setItem('returnPage', 'about');">关于</a>
+                <a href="/" id="btn-home" class="menu-btn">首页</a>
+                <a href="/columns" id="btn-columns" class="menu-btn">专栏</a>
+                <a href="/message-board" id="btn-message-board" class="menu-btn">留言板</a>
+                <a href="/discovery" id="btn-discovery" class="menu-btn">发现</a>
+                <a href="/portfolio" id="btn-portfolio" class="menu-btn">作品集</a>
+                <a href="/about" id="btn-about" class="menu-btn active">关于</a>
             </div>
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="搜索日志...">
+                <input type="text" id="search-input" placeholder="搜索日志..." oninput="window.location.href = '/?search=' + this.value;">
                 <i class="fas fa-search search-icon"></i>
             </div>
         </div>
@@ -58,19 +58,14 @@
     <div class="container">
         <div style="flex:3; display:flex; flex-direction:column;">
             <main class="content-area">
-                <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
-                    <div>
-                        <h1 style="margin-top:0;">专栏</h1>
-                        <p style="margin: 0; color:#444;">将文章按主题聚合。</p>
-                    </div>
-
-                    <div id="columns-list" style="margin-top:24px;"></div>
+                <div id="blog-list-container">
+                    <h2 style="color:white; font-family:'Bangers'; text-align:center; margin-top:50px;">加载中...</h2>
                 </div>
             </main>
         </div>
 
-        <aside class="sidebar-area">
-            <div class="widget-box">
+        <aside class="sidebar-area" id="main-sidebar">
+            <div class="widget-box" id="webmaster-widget">
                 <div class="widget-title">站长</div>
                 <div class="profile-mini" style="margin-top: 15px;">
                     <img src="/img/head.jpg" alt="Avatar" onerror="this.src='https://placehold.co/60x60'">
@@ -83,7 +78,6 @@
                     吃的好，睡得好，就开心😄！
                 </div>
 
-                <!-- 站点统计 -->
                 <div
                     style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.85rem; color: #aaa;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -100,7 +94,6 @@
                     </div>
                 </div>
 
-                <!-- 管理按钮 (仅管理员可见) -->
                 <div id="admin-buttons" style="display: none; margin-top: 15px; display: flex; gap: 15px; flex-wrap: wrap;">
                     <a href="/editor.html" id="btn-write" class="admin-btn" 
                        style="flex:1; text-align:center; background:var(--p5-red); color:white; padding:10px 15px; text-decoration:none; font-family:'Bangers'; font-size:1rem; border:3px solid var(--p5-white); box-shadow:4px 4px 0 var(--p5-white); transition:all 0.2s;"
@@ -120,11 +113,10 @@
             </div>
 
             <div class="widget-box">
-                <div class="widget-title">说明</div>
+                <div class="widget-title">提示</div>
                 <div style="margin-top: 15px; font-size: 0.95rem; color: #ddd; line-height: 1.7;">
-                    <div>1) 专栏由作者配置</div>
-                    <div style="margin-top:8px;">2) 编辑文章时可选择专栏</div>
-                    <div style="margin-top:8px;">3) 本页按专栏聚合文章</div>
+                    <div>这里是我的个人介绍</div>
+                    <div style="margin-top:8px;">欢迎交流技术问题</div>
                 </div>
             </div>
         </aside>
@@ -148,26 +140,29 @@
                     <li><a href="/">首页</a></li>
                     <li><a href="/columns">专栏</a></li>
                     <li><a href="/message-board">留言板</a></li>
-                    <li><a href="/" onclick="localStorage.setItem('returnPage', 'portfolio');">作品集</a></li>
-                    <li><a href="/" onclick="localStorage.setItem('returnPage', 'about');">关于</a></li>
+                    <li><a href="/portfolio">作品集</a></li>
+                    <li><a href="/about">关于</a></li>
                 </ul>
             </div>
             
             <div class="footer-column">
                 <div class="footer-heading">资源链接</div>
                 <ul class="footer-links">
-                    <li><a href="/" onclick="localStorage.setItem('returnPage', 'discovery');">发现</a></li>
-                    <li><a href="/">Unity3D</a></li>
-                    <li><a href="/">C#</a></li>
-                    <li><a href="/">Web开发</a></li>
+                    <li><a href="/discovery">发现</a></li>
+                    <li><a href="/?search=Unity3D">Unity3D</a></li>
+                    <li><a href="/?search=C#">C#</a></li>
+                    <li><a href="/?search=Web">Web开发</a></li>
                 </ul>
             </div>
             
             <div class="footer-column">
-                <div class="footer-heading">联系我们</div>
+                <div class="footer-heading">联系我</div>
                 <div class="footer-contact">
                     <div class="footer-social-links">
                         <div class="social-links" id="social-links-container"></div>
+                    </div>
+                    <div class="footer-qrcode">
+                        <img src="/img/VX.png" alt="微信二维码" class="qrcode-img">
                     </div>
                 </div>
             </div>
@@ -177,7 +172,7 @@
             <div class="footer-bottom-inner">
                 <span class="footer-copyright"><span id="footer-copyright" style="font-weight:900; color:var(--p5-yellow);">YOULAI NOTE</span> 2025 - 2026. All rights reserved.</span>
                 <span class="footer-divider">|</span>
-                <a href="/" onclick="localStorage.setItem('returnPage', 'about');">关于我们</a>
+                <a href="/about">关于我们</a>
                 <span class="footer-divider">|</span>
                 <a href="https://beian.miit.gov.cn/">湘ICP备2026001893号</a>
                 <span class="footer-divider">|</span>
@@ -191,14 +186,20 @@
 
     <script src="/js/model.js"></script>
     <script src="/js/index.js"></script>
-    <script src="/js/columns.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
     <script>
-        // 页面加载完成后初始化
+        // 页面加载完成后自动显示关于页面内容
         document.addEventListener('DOMContentLoaded', function() {
-            // 初始化站点配置和统计信息
-            initApp();
-            // 初始化专栏数据
-            initColumns();
+            // 等待 initApp 完成后再显示关于页面
+            setTimeout(() => {
+                showAboutPage();
+            }, 100);
         });
     </script>
 </body>

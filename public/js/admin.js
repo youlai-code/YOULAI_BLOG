@@ -748,11 +748,11 @@ async function loadPortfolio() {
     setStatus('portfolio-status', '加载中...');
 
     try {
-        const res = await fetch('/portfolio.json');
-        const items = await res.json();
+        const res = await fetch('/api/portfolio');
+        const data = await res.json();
         grid.innerHTML = '';
 
-        (Array.isArray(items) ? items : []).forEach(item => grid.appendChild(buildPortfolioCard(item)));
+        (Array.isArray(data?.items) ? data.items : []).forEach(item => grid.appendChild(buildPortfolioCard(item)));
         
         setStatus('portfolio-status', '');
     } catch {

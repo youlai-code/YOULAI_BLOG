@@ -134,6 +134,19 @@ div.code-toolbar>.toolbar>.toolbar-item>button:hover {
     margin-top: 100px;
 }
 
+/* 防止长链接和代码自动换行 */
+.markdown-body a {
+    white-space: nowrap;
+}
+
+.markdown-body code {
+    white-space: nowrap;
+}
+
+.markdown-body pre {
+    white-space: pre;
+}
+
 /* 视频容器样式 - 16:9 响应式，大屏占比优化 */
 .markdown-body .video-container {
     position: relative;

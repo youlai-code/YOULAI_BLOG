@@ -79,6 +79,18 @@ function createApp() {
         res.sendFile(path.join(PUBLIC_DIR, 'message-board.html'));
     });
 
+    app.get(['/discovery', '/discovery/'], (req, res) => {
+        res.sendFile(path.join(PUBLIC_DIR, 'discovery.html'));
+    });
+
+    app.get(['/portfolio', '/portfolio/'], (req, res) => {
+        res.sendFile(path.join(PUBLIC_DIR, 'portfolio.html'));
+    });
+
+    app.get(['/about', '/about/'], (req, res) => {
+        res.sendFile(path.join(PUBLIC_DIR, 'about.html'));
+    });
+
     const adminRoutes = require('./routes/admin.routes');
     const postsRoutes = require('./routes/posts.routes');
     const commentsRoutes = require('./routes/comments.routes');

@@ -14,7 +14,7 @@
 ---
 **网站截图**：
 
-![Project Screenshot](image.png)
+![Project Screenshot](assets/image.png)
 
 ## 项目简介
 
