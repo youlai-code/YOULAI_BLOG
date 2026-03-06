@@ -575,6 +575,18 @@ async function publish() {
 
         const result = await res.json();
 
+        if (res.status === 401) {
+            localStorage.removeItem('YOULAI_ADMIN_TOKEN');
+            localStorage.removeItem('YOULAI_ADMIN');
+            showNotification('登录已过期，请重新登录', 'error');
+            setTimeout(() => {
+                window.location.href = '/login.html';
+            }, 1200);
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            return;
+        }
+
         if (result.success) {
             showNotification(currentEditingId ? '文章更新成功！' : '文章发布成功！', 'success');
             localStorage.removeItem('editor_draft');
