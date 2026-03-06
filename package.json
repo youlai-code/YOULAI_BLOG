@@ -1,6 +1,6 @@
 {
   "name": "youlai-blog",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "个人技术博客系统 - P5R 风格",
   "main": "server.js",
   "scripts": {
