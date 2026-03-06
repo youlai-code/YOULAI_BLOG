@@ -354,10 +354,10 @@ function renderPage(page) {
     // 分页控件
     if (totalPages > 1) {
         const pagination = document.createElement('div');
-        pagination.className = 'pagination-bar';
+        pagination.className = 'pagination-bar pagination-home';
 
         const prevBtn = document.createElement('button');
-        prevBtn.className = 'page-btn';
+        prevBtn.className = 'page-btn page-btn--prev';
         prevBtn.innerText = '上一页';
         prevBtn.disabled = currentPage <= 1;
         prevBtn.onclick = () => changePage(-1);
@@ -367,7 +367,7 @@ function renderPage(page) {
         info.innerText = `${currentPage} / ${totalPages}`;
 
         const nextBtn = document.createElement('button');
-        nextBtn.className = 'page-btn';
+        nextBtn.className = 'page-btn page-btn--next';
         nextBtn.innerText = '下一页';
         nextBtn.disabled = currentPage >= totalPages;
         nextBtn.onclick = () => changePage(1);

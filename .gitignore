@@ -26,6 +26,7 @@ Thumbs.db
 # 忽略临时文件
 *.swp
 *.swo
+tmp_mcp/
 
 # 忽略覆盖率报告
 coverage/

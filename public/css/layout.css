@@ -56,33 +56,40 @@
 
 .menu-list {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
 }
 
 .menu-btn {
     background: transparent;
     color: var(--p5-white);
-    font-family: 'Bangers';
-    font-size: 1.2rem;
-    padding: 8px 16px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 1.65rem;
+    font-style: italic;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    padding: 9px 20px;
     text-decoration: none;
-    border-radius: 4px;
+    border-radius: 3px;
     transition: all 0.2s;
     position: relative;
     border: 2px solid transparent;
+    transform: skewX(-14deg);
+    line-height: 1;
 }
 
 .menu-btn:hover {
     background: var(--p5-red);
     color: var(--p5-white);
     border-color: var(--p5-red);
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
 }
 
 .menu-btn.active {
     background: var(--p5-yellow);
     color: var(--p5-black);
     border-color: var(--p5-yellow);
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
 }
 
 /* --- 搜索框 --- */
@@ -94,26 +101,30 @@
 
 #search-input {
     font-family: 'Noto Sans SC', sans-serif;
-    font-size: 0.95rem;
-    padding: 8px 35px 8px 15px;
-    border: 2px solid var(--p5-white);
-    background: transparent;
+    font-size: 1rem;
+    font-style: italic;
+    font-weight: 700;
+    padding: 10px 42px 10px 15px;
+    border: 3px solid var(--p5-white);
+    background: rgba(0, 0, 0, 0.68);
     color: var(--p5-white);
     outline: none;
     transition: all 0.3s;
-    width: 180px;
-    border-radius: 4px;
+    width: 260px;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.55);
 }
 
 #search-input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.66);
 }
 
 #search-input:focus {
     background: var(--p5-white);
     color: var(--p5-black);
     border-color: var(--p5-yellow);
-    width: 220px;
+    width: 300px;
+    box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.6);
 }
 
 #search-input:focus::placeholder {
@@ -122,8 +133,9 @@
 
 .search-icon {
     position: absolute;
-    right: 12px;
-    color: rgba(255, 255, 255, 0.6);
+    right: 14px;
+    color: var(--p5-yellow);
+    font-size: 1.15rem;
     pointer-events: none;
     transition: color 0.3s;
 }
@@ -134,12 +146,14 @@
 
 /* --- 布局 --- */
 .container {
-    max-width: 1400px;
+    max-width: 1440px;
+    width: 100%;
     margin: 40px auto;
     margin-top: 120px;
     display: flex;
     gap: 40px;
     padding: 0 20px;
+    box-sizing: border-box;
     flex: 1;
     position: relative;
     z-index: 10;

@@ -1,3 +1,7 @@
+---
+alwaysApply: false
+description: 
+---
 # P5R 风格配色约束
 
 ## 概述

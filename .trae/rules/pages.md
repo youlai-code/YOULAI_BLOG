@@ -1,3 +1,7 @@
+---
+alwaysApply: false
+description: 
+---
 # 界面说明
 
 本文档汇总了 YOULAI_BLOG 项目的所有界面文件，并为每个界面分配了唯一编号。

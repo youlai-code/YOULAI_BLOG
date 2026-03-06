@@ -56,13 +56,15 @@
     </nav>
 
     <div class="container">
-        <main class="content-area">
+        <div style="flex:3; display:flex; flex-direction:column;">
+            <main class="content-area">
             <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
                 <h1 style="margin-top:0;">网站留言板</h1>
                 <p style="margin-top:10px; color:#444;">文章留言会显示在对应文章底部；这里是全站留言。</p>
 
                 <h3 style="margin-top:34px;">最新留言</h3>
-                <div id="site-comments-list" class="comment-list" style="margin-top:12px;"></div>
+                <div id="site-comments-list" class="site-comment-list" style="margin-top:12px;"></div>
+                <div id="site-comments-pagination" class="pagination-bar pagination-home" style="margin-top:16px;"></div>
 
                 <div class="comment-form" style="margin-top:34px; padding-top:34px; border-top:2px dashed #ccc;">
                     <h3 style="margin-bottom:18px;">发表留言</h3>
@@ -90,7 +92,9 @@
                         <button id="site-comment-submit" class="p5-cta-btn" type="button">提交</button>
                     </div>
                 </div>
+            </div>
             </main>
+        </div>
 
         <aside class="sidebar-area" id="main-sidebar">
             <div class="widget-box" id="webmaster-widget">
@@ -239,10 +243,111 @@
         }
 
         // 加载网站留言
+        const SITE_COMMENT_PAGE_SIZE = 20;
+        let siteComments = [];
+        let currentSiteCommentPage = 1;
+
+        function formatSiteCommentTime(iso) {
+            const d = new Date(iso || '');
+            if (Number.isNaN(d.getTime())) return '';
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${y}-${m}-${day} ${hh}:${mm}`;
+        }
+
+        function createSiteCommentItem(comment) {
+            const item = document.createElement('div');
+            item.className = 'site-comment-item';
+
+            const head = document.createElement('div');
+            head.className = 'site-comment-head';
+
+            const name = document.createElement('div');
+            name.className = 'site-comment-name';
+            name.textContent = comment?.name || '匿名访客';
+
+            const time = document.createElement('div');
+            time.className = 'site-comment-time';
+            time.textContent = formatSiteCommentTime(comment?.createdAt);
+
+            const body = document.createElement('div');
+            body.className = 'site-comment-body';
+            body.textContent = comment?.content || '';
+
+            head.appendChild(name);
+            head.appendChild(time);
+            item.appendChild(head);
+            item.appendChild(body);
+            return item;
+        }
+
+        function renderSiteCommentPagination(totalPages) {
+            const paginationEl = document.getElementById('site-comments-pagination');
+            if (!paginationEl) return;
+            paginationEl.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn page-btn--prev';
+            prevBtn.type = 'button';
+            prevBtn.textContent = '上一页';
+            prevBtn.disabled = currentSiteCommentPage <= 1;
+            prevBtn.onclick = () => renderSiteCommentPage(currentSiteCommentPage - 1);
+
+            const info = document.createElement('div');
+            info.className = 'page-info';
+            info.textContent = `${currentSiteCommentPage} / ${totalPages}`;
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn page-btn--next';
+            nextBtn.type = 'button';
+            nextBtn.textContent = '下一页';
+            nextBtn.disabled = currentSiteCommentPage >= totalPages;
+            nextBtn.onclick = () => renderSiteCommentPage(currentSiteCommentPage + 1);
+
+            paginationEl.appendChild(prevBtn);
+            paginationEl.appendChild(info);
+            paginationEl.appendChild(nextBtn);
+        }
+
+        function renderSiteCommentPage(page) {
+            const listEl = document.getElementById('site-comments-list');
+            const paginationEl = document.getElementById('site-comments-pagination');
+            if (!listEl || !paginationEl) return;
+
+            listEl.innerHTML = '';
+            if (siteComments.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'comment-empty';
+                empty.textContent = '还没有留言，来当第一个吧。';
+                listEl.appendChild(empty);
+                paginationEl.innerHTML = '';
+                return;
+            }
+
+            const totalPages = Math.max(1, Math.ceil(siteComments.length / SITE_COMMENT_PAGE_SIZE));
+            currentSiteCommentPage = Math.min(Math.max(1, page), totalPages);
+
+            const start = (currentSiteCommentPage - 1) * SITE_COMMENT_PAGE_SIZE;
+            const currentPageItems = siteComments.slice(start, start + SITE_COMMENT_PAGE_SIZE);
+            currentPageItems.forEach((comment) => {
+                listEl.appendChild(createSiteCommentItem(comment));
+            });
+
+            renderSiteCommentPagination(totalPages);
+        }
+
+        // Load site comments
         async function loadSiteComments() {
             const listEl = document.getElementById('site-comments-list');
-            if (!listEl) return;
+            const paginationEl = document.getElementById('site-comments-pagination');
+            if (!listEl || !paginationEl) return;
             listEl.innerHTML = '';
+            paginationEl.innerHTML = '';
 
             const placeholder = document.createElement('div');
             placeholder.className = 'comment-empty';
@@ -252,19 +357,15 @@
             try {
                 const res = await fetch('/api/comments/site');
                 const data = await res.json();
-                listEl.innerHTML = '';
                 if (!data?.success) throw new Error(data?.message || 'FAILED');
 
-                const comments = Array.isArray(data.comments) ? data.comments : [];
-                if (comments.length === 0) {
-                    const empty = document.createElement('div');
-                    empty.className = 'comment-empty';
-                    empty.textContent = '还没有留言，来当第一个吧。';
-                    listEl.appendChild(empty);
-                    return;
-                }
-
-                comments.forEach(c => listEl.appendChild(buildCommentCard(c)));
+                siteComments = Array.isArray(data.comments) ? data.comments.slice() : [];
+                siteComments.sort((a, b) => {
+                    const aTime = new Date(a?.createdAt || 0).getTime();
+                    const bTime = new Date(b?.createdAt || 0).getTime();
+                    return bTime - aTime;
+                });
+                renderSiteCommentPage(1);
             } catch (e) {
                 listEl.innerHTML = '';
                 const err = document.createElement('div');
@@ -274,7 +375,7 @@
             }
         }
 
-        // 提交网站留言
+        // Submit site comment
         async function submitSiteComment() {
             const nameEl = document.getElementById('site-comment-name');
             const contactEl = document.getElementById('site-comment-contact');
