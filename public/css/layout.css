@@ -345,6 +345,13 @@
     white-space: nowrap;
 }
 
+.footer-version {
+    color: var(--p5-yellow);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
 /* --- 移动端适配 --- */
 @media (max-width: 768px) {
     .container {

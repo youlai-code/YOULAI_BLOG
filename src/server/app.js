@@ -10,6 +10,7 @@ const { isValidPostId } = require('./utils/paths');
 
 const PUBLIC_DIR = path.join(__dirname, '../../public');
 const DATA_DIR = path.join(__dirname, '../../data');
+const APP_VERSION = require('../../package.json').version || '0.0.0';
 
 function createApp() {
     const app = express();
@@ -38,7 +39,10 @@ function createApp() {
     app.get('/config.json', async (req, res) => {
         try {
             const config = await configService.getConfig();
-            res.json(config);
+            res.json({
+                ...config,
+                appVersion: APP_VERSION
+            });
         } catch (e) {
             console.error('Failed to get config:', e);
             res.status(500).json({});

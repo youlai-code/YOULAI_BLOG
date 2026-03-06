@@ -30,6 +30,14 @@ function normalizeSocialConfig(key, social) {
     };
 }
 
+function applyAppVersion(version) {
+    const normalizedVersion = String(version || '').trim().replace(/^v/i, '');
+    if (!normalizedVersion) return;
+    document.querySelectorAll('.footer-version').forEach((el) => {
+        el.textContent = `v${normalizedVersion}`;
+    });
+}
+
 function getPostUrl(postId) {
     const base = window.SITE_CONFIG?.seo?.postSubdomainBase;
     if (base && typeof base === 'string' && base.trim()) {
@@ -268,6 +276,8 @@ async function updateSiteStats() {
 // 加载社交媒体链接和站点配置
 function applySiteConfig(config) {
     try {
+        applyAppVersion(config?.appVersion);
+
         // --- 0. 权限控制 UI ---
         const adminButtons = document.getElementById('admin-buttons');
         if (adminButtons) adminButtons.style.display = window.IS_ADMIN ? 'flex' : 'none';
