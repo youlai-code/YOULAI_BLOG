@@ -155,60 +155,240 @@ function buildBtn(text, cls, onClick) {
     return btn;
 }
 
+const postsState = {
+    all: [],
+    keyword: '',
+    dateFrom: '',
+    dateTo: '',
+    page: 1,
+    pageSize: 10
+};
+
+function getPostDateValue(postDate) {
+    const match = String(postDate || '').match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+    if (!match) return null;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (!year || !month || !day) return null;
+
+    const dt = new Date(year, month - 1, day);
+    if (Number.isNaN(dt.getTime())) return null;
+    dt.setHours(0, 0, 0, 0);
+    return dt.getTime();
+}
+
+function getFilteredPosts() {
+    const keyword = postsState.keyword.trim().toLowerCase();
+    const fromDate = postsState.dateFrom ? new Date(`${postsState.dateFrom}T00:00:00`).getTime() : null;
+    const toDate = postsState.dateTo ? new Date(`${postsState.dateTo}T23:59:59.999`).getTime() : null;
+
+    return postsState.all.filter((post) => {
+        const searchable = [
+            post.id,
+            post.title,
+            post.date,
+            post.columnId
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        if (keyword && !searchable.includes(keyword)) return false;
+
+        if (fromDate !== null || toDate !== null) {
+            const postDate = getPostDateValue(post.date);
+            if (postDate === null) return false;
+            if (fromDate !== null && postDate < fromDate) return false;
+            if (toDate !== null && postDate > toDate) return false;
+        }
+
+        return true;
+    });
+}
+
+function updatePostsMeta(total, filtered, start, end) {
+    const metaEl = document.getElementById('posts-meta');
+    if (!metaEl) return;
+
+    const filterTips = [];
+    if (postsState.keyword.trim()) filterTips.push(`\u5173\u952e\u8bcd\u201c${postsState.keyword.trim()}\u201d`);
+    if (postsState.dateFrom || postsState.dateTo) {
+        filterTips.push(`\u65e5\u671f ${postsState.dateFrom || '\u4e0d\u9650'} ~ ${postsState.dateTo || '\u4e0d\u9650'}`);
+    }
+
+    if (!filtered) {
+        metaEl.textContent = `\u5171 ${total} \u7bc7\uff0c\u672a\u627e\u5230\u5339\u914d\u6587\u7ae0${filterTips.length ? `\uff08${filterTips.join('\uff0c')}\uff09` : ''}`;
+        return;
+    }
+
+    metaEl.textContent = `\u5171 ${total} \u7bc7\uff0c\u7b5b\u9009\u540e ${filtered} \u7bc7\uff0c\u5f53\u524d\u663e\u793a ${start}-${end}${filterTips.length ? `\uff08${filterTips.join('\uff0c')}\uff09` : ''}`;
+}
+
+function normalizePostsDateRange() {
+    if (!postsState.dateFrom || !postsState.dateTo) return;
+    if (postsState.dateFrom <= postsState.dateTo) return;
+
+    const tmp = postsState.dateFrom;
+    postsState.dateFrom = postsState.dateTo;
+    postsState.dateTo = tmp;
+
+    const fromInput = document.getElementById('posts-date-from');
+    const toInput = document.getElementById('posts-date-to');
+    if (fromInput) fromInput.value = postsState.dateFrom;
+    if (toInput) toInput.value = postsState.dateTo;
+}
+
+function createPageButton(label, onClick, options = {}) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `btn page-btn${options.active ? ' active' : ''}`;
+    btn.textContent = label;
+    btn.disabled = Boolean(options.disabled);
+    if (typeof onClick === 'function' && !btn.disabled) {
+        btn.addEventListener('click', onClick);
+    }
+    return btn;
+}
+
+function buildPageList(totalPages, currentPage) {
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+
+    const pages = [1];
+    const left = Math.max(2, currentPage - 1);
+    const right = Math.min(totalPages - 1, currentPage + 1);
+
+    if (left > 2) pages.push('...');
+    for (let i = left; i <= right; i++) pages.push(i);
+    if (right < totalPages - 1) pages.push('...');
+    pages.push(totalPages);
+    return pages;
+}
+
+function renderPostsPagination(totalItems) {
+    const pager = document.getElementById('posts-pagination');
+    if (!pager) return;
+
+    pager.innerHTML = '';
+
+    const totalPages = Math.max(1, Math.ceil(totalItems / postsState.pageSize));
+    if (postsState.page > totalPages) postsState.page = totalPages;
+
+    const prevBtn = createPageButton('上一页', () => {
+        postsState.page -= 1;
+        renderPostsTable();
+    }, { disabled: postsState.page <= 1 });
+    pager.appendChild(prevBtn);
+
+    buildPageList(totalPages, postsState.page).forEach((page) => {
+        if (page === '...') {
+            const dot = document.createElement('span');
+            dot.className = 'page-ellipsis';
+            dot.textContent = '...';
+            pager.appendChild(dot);
+            return;
+        }
+
+        pager.appendChild(createPageButton(String(page), () => {
+            postsState.page = page;
+            renderPostsTable();
+        }, { active: page === postsState.page }));
+    });
+
+    const nextBtn = createPageButton('下一页', () => {
+        postsState.page += 1;
+        renderPostsTable();
+    }, { disabled: postsState.page >= totalPages });
+    pager.appendChild(nextBtn);
+}
+
+function renderPostsTable() {
+    const tbody = document.getElementById('posts-tbody');
+    if (!tbody) return;
+
+    const filteredPosts = getFilteredPosts();
+    const total = filteredPosts.length;
+    const totalPages = Math.max(1, Math.ceil(total / postsState.pageSize));
+    if (postsState.page > totalPages) postsState.page = totalPages;
+
+    const startIndex = (postsState.page - 1) * postsState.pageSize;
+    const pagePosts = filteredPosts.slice(startIndex, startIndex + postsState.pageSize);
+
+    tbody.innerHTML = '';
+
+    if (!pagePosts.length) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 5;
+        td.className = 'empty-state';
+        td.textContent = '暂无数据';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        updatePostsMeta(postsState.all.length, total, 0, 0);
+        renderPostsPagination(total);
+        return;
+    }
+
+    pagePosts.forEach((p, idx) => {
+        const tr = document.createElement('tr');
+
+        const tdIndex = document.createElement('td');
+        tdIndex.className = 'mono posts-index-cell';
+        tdIndex.textContent = String(startIndex + idx + 1);
+        tdIndex.dataset.label = '序号';
+
+        const tdTitle = document.createElement('td');
+        tdTitle.className = 'posts-title-cell';
+        const a = document.createElement('a');
+        a.href = `/posts/${encodeURIComponent(p.id)}`;
+        a.textContent = p.title || p.id;
+        a.className = 'posts-title-link';
+        tdTitle.appendChild(a);
+        tdTitle.dataset.label = '标题';
+
+        const tdDate = document.createElement('td');
+        tdDate.textContent = p.date || '';
+        tdDate.dataset.label = '日期';
+
+        const tdCol = document.createElement('td');
+        tdCol.innerHTML = p.columnId ? `<span class="pill mono">${p.columnId}</span>` : '<span class="pill">-</span>';
+        tdCol.dataset.label = '专栏';
+
+        const tdActions = document.createElement('td');
+        const btnEdit = buildBtn('编辑', '', () => (window.location.href = `/editor.html?id=${encodeURIComponent(p.id)}`));
+        const btnDel = buildBtn('删除', 'btn-danger', async () => {
+            if (!confirm('确定删除该文章？')) return;
+            await deletePost(p.id);
+        });
+        tdActions.appendChild(buildActionButtons([btnEdit, btnDel]));
+        tdActions.dataset.label = '操作';
+
+        tr.appendChild(tdIndex);
+        tr.appendChild(tdTitle);
+        tr.appendChild(tdDate);
+        tr.appendChild(tdCol);
+        tr.appendChild(tdActions);
+        tbody.appendChild(tr);
+    });
+
+    updatePostsMeta(postsState.all.length, total, startIndex + 1, startIndex + pagePosts.length);
+    renderPostsPagination(total);
+}
+
 async function loadPosts() {
     const tbody = document.getElementById('posts-tbody');
     if (!tbody) return;
-    tbody.innerHTML = '';
     setStatus('posts-status', '加载中...');
+
     try {
         const res = await fetch('/posts.json');
         const posts = await res.json();
-        tbody.innerHTML = '';
-
-        (Array.isArray(posts) ? posts : []).forEach(p => {
-            const tr = document.createElement('tr');
-
-            const tdId = document.createElement('td');
-            tdId.className = 'mono';
-            tdId.textContent = p.id;
-            tdId.dataset.label = 'ID';
-
-            const tdTitle = document.createElement('td');
-            const a = document.createElement('a');
-            a.href = `/posts/${encodeURIComponent(p.id)}`;
-            a.textContent = p.title || p.id;
-            a.style.color = 'inherit';
-            a.style.textDecoration = 'none';
-            tdTitle.appendChild(a);
-            tdTitle.dataset.label = '\u6807\u9898';
-
-            const tdDate = document.createElement('td');
-            tdDate.textContent = p.date || '';
-            tdDate.dataset.label = '\u65e5\u671f';
-
-            const tdCol = document.createElement('td');
-            tdCol.innerHTML = p.columnId ? `<span class="pill mono">${p.columnId}</span>` : '<span class="pill">-</span>';
-            tdCol.dataset.label = '\u4e13\u680f';
-
-            const tdActions = document.createElement('td');
-            const btnEdit = buildBtn('编辑', '', () => (window.location.href = `/editor.html?id=${encodeURIComponent(p.id)}`));
-            const btnDel = buildBtn('删除', 'btn-danger', async () => {
-                if (!confirm('确定删除该文章？')) return;
-                await deletePost(p.id);
-            });
-            tdActions.appendChild(buildActionButtons([btnEdit, btnDel]));
-            tdActions.dataset.label = '\u64cd\u4f5c';
-
-            tr.appendChild(tdId);
-            tr.appendChild(tdTitle);
-            tr.appendChild(tdDate);
-            tr.appendChild(tdCol);
-            tr.appendChild(tdActions);
-            tbody.appendChild(tr);
-        });
-
+        postsState.all = Array.isArray(posts) ? posts : [];
+        renderPostsTable();
         setStatus('posts-status', '');
     } catch {
+        postsState.all = [];
+        renderPostsTable();
         setStatus('posts-status', '加载失败');
     }
 }
@@ -499,14 +679,17 @@ function buildColumnCard(column) {
     const content = document.createElement('div');
     content.className = 'card-content';
 
-    const createField = (label, value, placeholder, onInput) => {
+    const createField = (label, value, placeholder, onInput, options = {}) => {
         const field = document.createElement('div');
         field.className = 'card-field';
         field.innerHTML = `<label>${label}</label>`;
-        const input = document.createElement('input');
-        input.className = 'input';
+        const input = options.multiline ? document.createElement('textarea') : document.createElement('input');
+        input.className = ['input', options.className || ''].filter(Boolean).join(' ');
         input.value = value || '';
         input.placeholder = placeholder;
+        if (options.multiline) {
+            input.rows = options.rows || 4;
+        }
         if (onInput) input.oninput = () => onInput(input.value);
         field.appendChild(input);
         return { field, input };
@@ -633,6 +816,93 @@ function generateIdFromName(name) {
         .slice(0, 50) || 'new-item-' + Date.now();
 }
 
+let activePortfolioDragCard = null;
+
+function cleanupPortfolioDragging(grid) {
+    if (!grid) return;
+
+    grid.querySelectorAll('.admin-card').forEach((card) => {
+        card.classList.remove('drag-ready', 'dragging', 'drag-over-before', 'drag-over-after');
+        card.draggable = false;
+    });
+
+    activePortfolioDragCard = null;
+}
+
+function enablePortfolioSorting() {
+    const grid = document.getElementById('portfolio-grid');
+    if (!grid || grid.dataset.sortableBound === '1') return;
+
+    grid.dataset.sortableBound = '1';
+
+    grid.addEventListener('pointerdown', (event) => {
+        const handle = event.target.closest('.card-drag-handle');
+        if (!handle) return;
+
+        const card = handle.closest('.admin-card');
+        if (!card) return;
+
+        activePortfolioDragCard = card;
+        card.draggable = true;
+        card.classList.add('drag-ready');
+    });
+
+    grid.addEventListener('dragstart', (event) => {
+        const card = event.target.closest('.admin-card');
+        if (!card || card !== activePortfolioDragCard) {
+            event.preventDefault();
+            return;
+        }
+
+        card.classList.add('dragging');
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', card._getPortfolioData?.().id || 'portfolio-card');
+        }
+    });
+
+    grid.addEventListener('dragover', (event) => {
+        if (!activePortfolioDragCard) return;
+        event.preventDefault();
+
+        const target = event.target.closest('.admin-card');
+        if (!target || target === activePortfolioDragCard) return;
+
+        grid.querySelectorAll('.admin-card').forEach((card) => {
+            card.classList.remove('drag-over-before', 'drag-over-after');
+        });
+
+        const rect = target.getBoundingClientRect();
+        const placeAfter = event.clientY > rect.top + rect.height / 2;
+        target.classList.add(placeAfter ? 'drag-over-after' : 'drag-over-before');
+
+        if (placeAfter) {
+            grid.insertBefore(activePortfolioDragCard, target.nextSibling);
+        } else {
+            grid.insertBefore(activePortfolioDragCard, target);
+        }
+    });
+
+    grid.addEventListener('dragleave', (event) => {
+        const target = event.target.closest('.admin-card');
+        if (!target) return;
+        target.classList.remove('drag-over-before', 'drag-over-after');
+    });
+
+    grid.addEventListener('drop', (event) => {
+        if (!activePortfolioDragCard) return;
+        event.preventDefault();
+    });
+
+    grid.addEventListener('dragend', () => cleanupPortfolioDragging(grid));
+
+    grid.addEventListener('pointerup', () => {
+        if (activePortfolioDragCard && !activePortfolioDragCard.classList.contains('dragging')) {
+            cleanupPortfolioDragging(grid);
+        }
+    });
+}
+
 function buildPortfolioCard(item) {
     const card = document.createElement('div');
     card.className = 'admin-card';
@@ -698,14 +968,17 @@ function buildPortfolioCard(item) {
     const content = document.createElement('div');
     content.className = 'card-content';
 
-    const createField = (label, value, placeholder, onInput) => {
+    const createField = (label, value, placeholder, onInput, options = {}) => {
         const field = document.createElement('div');
         field.className = 'card-field';
         field.innerHTML = `<label>${label}</label>`;
-        const input = document.createElement('input');
-        input.className = 'input';
+        const input = options.multiline ? document.createElement('textarea') : document.createElement('input');
+        input.className = ['input', options.className || ''].filter(Boolean).join(' ');
         input.value = value || '';
         input.placeholder = placeholder;
+        if (options.multiline) {
+            input.rows = options.rows || 4;
+        }
         if (onInput) input.oninput = () => onInput(input.value);
         field.appendChild(input);
         return { field, input };
@@ -722,14 +995,16 @@ function buildPortfolioCard(item) {
         }
     });
     
-    const idField = createField('ID (自动生成)', item.id, 'unique-id');
-    const idInput = idField.input;
-    idInput.readOnly = true;
-    idInput.style.background = 'var(--bg)';
-    idInput.style.color = 'var(--muted)';
+    const idInput = document.createElement('input');
+    idInput.type = 'hidden';
+    idInput.value = item.id || '';
     idInput._isAuto = !item.id; // If no ID initially, mark as auto-generated
 
-    const descField = createField('描述', item.description, '简短介绍');
+    const descField = createField('描述', item.description, '简短介绍', null, {
+        multiline: true,
+        rows: 5,
+        className: 'portfolio-desc-input'
+    });
     const linkField = createField('链接', item.url, 'https://...');
     const tagsField = createField('标签', Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''), '标签1, 标签2');
 
@@ -746,7 +1021,23 @@ function buildPortfolioCard(item) {
     `;
     statusField.appendChild(statusSelect);
 
-    content.append(nameField.field, idField.field, descField.field, linkField.field, tagsField.field, statusField);
+    content.append(nameField.field, descField.field, linkField.field, tagsField.field, statusField);
+
+    const dragHandle = document.createElement('button');
+    dragHandle.type = 'button';
+    dragHandle.className = 'card-drag-handle';
+    dragHandle.title = '拖动排序';
+    dragHandle.setAttribute('aria-label', 'drag to sort');
+    dragHandle.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="8" cy="6" r="1"></circle>
+            <circle cx="16" cy="6" r="1"></circle>
+            <circle cx="8" cy="12" r="1"></circle>
+            <circle cx="16" cy="12" r="1"></circle>
+            <circle cx="8" cy="18" r="1"></circle>
+            <circle cx="16" cy="18" r="1"></circle>
+        </svg>
+    `;
 
     // Delete Button
     const delBtn = document.createElement('button');
@@ -759,7 +1050,7 @@ function buildPortfolioCard(item) {
         }
     };
 
-    card.append(coverArea, content, delBtn);
+    card.append(coverArea, content, dragHandle, delBtn);
 
     card._getPortfolioData = () => ({
         id: idInput.value,
@@ -777,6 +1068,7 @@ function buildPortfolioCard(item) {
 async function loadPortfolio() {
     const grid = document.getElementById('portfolio-grid');
     if (!grid) return;
+    cleanupPortfolioDragging(grid);
     grid.innerHTML = '';
     setStatus('portfolio-status', '加载中...');
 
@@ -786,6 +1078,7 @@ async function loadPortfolio() {
         grid.innerHTML = '';
 
         (Array.isArray(data?.items) ? data.items : []).forEach(item => grid.appendChild(buildPortfolioCard(item)));
+        enablePortfolioSorting();
         
         setStatus('portfolio-status', '');
     } catch {
@@ -837,6 +1130,7 @@ function addPortfolioCard() {
     const grid = document.getElementById('portfolio-grid');
     if (!grid) return;
     grid.prepend(buildPortfolioCard({ id: '', name: '', description: '', cover: '', url: '', tags: [], status: '开发中' }));
+    enablePortfolioSorting();
 }
 
 async function boot() {
@@ -1031,6 +1325,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshPosts = document.getElementById('btn-refresh-posts');
     if (refreshPosts) refreshPosts.addEventListener('click', loadPosts);
+    const postsSearchInput = document.getElementById('posts-search-input');
+    const postsDateFromInput = document.getElementById('posts-date-from');
+    const postsDateToInput = document.getElementById('posts-date-to');
+    if (postsSearchInput) {
+        postsSearchInput.addEventListener('input', () => {
+            postsState.keyword = postsSearchInput.value || '';
+            postsState.page = 1;
+            renderPostsTable();
+        });
+    }
+    const handlePostsDateChange = () => {
+        postsState.dateFrom = postsDateFromInput?.value || '';
+        postsState.dateTo = postsDateToInput?.value || '';
+        normalizePostsDateRange();
+        postsState.page = 1;
+        renderPostsTable();
+    };
+    if (postsDateFromInput) postsDateFromInput.addEventListener('change', handlePostsDateChange);
+    if (postsDateToInput) postsDateToInput.addEventListener('change', handlePostsDateChange);
+    const clearPostsSearchBtn = document.getElementById('btn-clear-posts-search');
+    if (clearPostsSearchBtn) {
+        clearPostsSearchBtn.addEventListener('click', () => {
+            if (postsSearchInput) postsSearchInput.value = '';
+            if (postsDateFromInput) postsDateFromInput.value = '';
+            if (postsDateToInput) postsDateToInput.value = '';
+            postsState.keyword = '';
+            postsState.dateFrom = '';
+            postsState.dateTo = '';
+            postsState.page = 1;
+            renderPostsTable();
+        });
+    }
     const refreshComments = document.getElementById('btn-refresh-comments');
     if (refreshComments) refreshComments.addEventListener('click', loadComments);
     const commentsStatus = document.getElementById('comments-status');

@@ -448,6 +448,118 @@ select.input {
     vertical-align: top;
 }
 
+.posts-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 20px 12px;
+}
+
+.posts-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.posts-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.posts-search .input {
+    min-width: 240px;
+    max-width: 360px;
+}
+
+.posts-date-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.posts-date-input {
+    min-width: 160px;
+    max-width: 170px;
+    flex: 0 0 auto;
+}
+
+.posts-date-sep {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.posts-meta {
+    font-size: 0.78rem;
+}
+
+.posts-table th,
+.posts-table td {
+    padding: 8px 10px;
+    font-size: 0.84rem;
+}
+
+.posts-table .posts-index-cell {
+    width: 58px;
+    color: var(--muted);
+}
+
+.posts-table .posts-title-cell {
+    min-width: 280px;
+    max-width: 560px;
+}
+
+.posts-title-link {
+    color: inherit;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.posts-title-link:hover {
+    color: var(--accent);
+}
+
+.posts-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 20px 18px;
+}
+
+.page-btn {
+    min-width: 34px;
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+}
+
+.page-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+}
+
+.page-btn:disabled {
+    opacity: 0.45;
+}
+
+.page-ellipsis {
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 0 2px;
+}
+
 .cell-actions {
     display: flex;
     gap: 6px;
@@ -807,6 +919,57 @@ a:hover {
         text-align: right;
     }
 
+    .posts-tools {
+        padding: 0 16px 12px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .posts-filters {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .posts-search {
+        width: 100%;
+    }
+
+    .posts-search .input {
+        min-width: 0;
+        max-width: none;
+        width: 100%;
+    }
+
+    .posts-date-filter {
+        width: 100%;
+        align-items: center;
+    }
+
+    .posts-date-input {
+        flex: 1 1 42%;
+        min-width: 0;
+        max-width: none;
+    }
+
+    .posts-meta {
+        text-align: left;
+    }
+
+    .posts-pagination {
+        justify-content: flex-start;
+        padding: 0 16px 16px;
+    }
+
+    .posts-table .posts-title-link {
+        text-align: right;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
     .btn {
         padding: 6px 12px;
     }
@@ -885,6 +1048,19 @@ a:hover {
 
     .table td:nth-child(2) a {
         max-width: 120px;
+    }
+
+    .page-btn {
+        min-width: 30px;
+        height: 30px;
+        padding: 0 8px;
+        font-size: 0.75rem;
+    }
+
+    .posts-date-sep {
+        width: 100%;
+        text-align: left;
+        margin: -2px 0;
     }
 
     .card-grid,
@@ -979,6 +1155,54 @@ a:hover {
     font-weight: 600;
 }
 
+.card-field textarea.input {
+    width: 100%;
+    max-width: none;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.portfolio-desc-input {
+    min-height: 120px;
+}
+
+.card-drag-handle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    color: #64748b;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.card-drag-handle:active {
+    cursor: grabbing;
+}
+
+.admin-card:hover .card-drag-handle,
+.admin-card.drag-ready .card-drag-handle,
+.admin-card.dragging .card-drag-handle {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.card-drag-handle:hover {
+    color: var(--accent);
+    background: #ffffff;
+}
+
 .card-delete-btn {
     position: absolute;
     top: 10px;
@@ -1008,6 +1232,20 @@ a:hover {
 .card-delete-btn:hover {
     background: #ef4444;
     color: #fff;
+}
+
+.admin-card.dragging {
+    opacity: 0.72;
+    transform: scale(0.985);
+    box-shadow: 0 18px 28px rgba(15, 23, 42, 0.2);
+}
+
+.admin-card.drag-over-before {
+    box-shadow: inset 0 3px 0 var(--accent);
+}
+
+.admin-card.drag-over-after {
+    box-shadow: inset 0 -3px 0 var(--accent);
 }
 
 /* Avatar Uploader */
@@ -1364,6 +1602,11 @@ a:hover {
     }
 
     .admin-card .card-delete-btn {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .admin-card .card-drag-handle {
         opacity: 1;
         transform: scale(1);
     }

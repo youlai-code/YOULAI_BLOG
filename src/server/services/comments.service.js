@@ -301,6 +301,56 @@ async function getAdminComments(scope = 'all', status = 'pending', postId = null
     }
 }
 
+async function getCommentsStore() {
+    const result = { site: [], posts: {} };
+
+    try {
+        const siteRows = db.prepare(`
+            SELECT * FROM comments
+            WHERE type = 'site' AND parentId IS NULL
+            ORDER BY createdAt DESC
+        `).all();
+
+        result.site = siteRows.map(row => ({
+            id: row.id,
+            name: row.name,
+            content: row.content,
+            contact: row.contact,
+            createdAt: row.createdAt,
+            status: row.status,
+            replies: getReplies(row.id)
+        }));
+
+        const postRows = db.prepare(`
+            SELECT * FROM comments
+            WHERE type = 'post' AND parentId IS NULL
+            ORDER BY createdAt DESC
+        `).all();
+
+        postRows.forEach(row => {
+            const key = row.postId || '';
+            if (!result.posts[key]) {
+                result.posts[key] = [];
+            }
+
+            result.posts[key].push({
+                id: row.id,
+                postId: row.postId,
+                name: row.name,
+                content: row.content,
+                contact: row.contact,
+                createdAt: row.createdAt,
+                status: row.status
+            });
+        });
+
+        return result;
+    } catch (e) {
+        console.error('DB Error getCommentsStore:', e);
+        return result;
+    }
+}
+
 // 数据迁移函数 - 从JSON文件迁移到数据库
 async function migrateFromJson(jsonData) {
     try {
@@ -360,5 +410,6 @@ module.exports = {
     moderateComment,
     moderateSiteReply,
     getAdminComments,
+    getCommentsStore,
     migrateFromJson
 };
