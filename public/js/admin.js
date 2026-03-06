@@ -43,6 +43,30 @@ function setStatus(id, text) {
     if (el) el.textContent = text || '';
 }
 
+const MOBILE_BREAKPOINT = 768;
+
+function isMobileViewport() {
+    return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+}
+
+function setSidebarOpen(open) {
+    document.body.classList.toggle('sidebar-open', Boolean(open));
+}
+
+function closeSidebar() {
+    setSidebarOpen(false);
+}
+
+function toggleSidebar() {
+    setSidebarOpen(!document.body.classList.contains('sidebar-open'));
+}
+
+function syncSidebarState() {
+    if (!isMobileViewport()) {
+        closeSidebar();
+    }
+}
+
 const pageTitles = {
     dashboard: '仪表盘',
     posts: '文章管理',
@@ -61,6 +85,10 @@ function showPanel(panel) {
     const titleEl = document.getElementById('page-title');
     if (titleEl && pageTitles[panel]) {
         titleEl.textContent = pageTitles[panel];
+    }
+
+    if (isMobileViewport()) {
+        closeSidebar();
     }
 }
 
@@ -143,6 +171,7 @@ async function loadPosts() {
             const tdId = document.createElement('td');
             tdId.className = 'mono';
             tdId.textContent = p.id;
+            tdId.dataset.label = 'ID';
 
             const tdTitle = document.createElement('td');
             const a = document.createElement('a');
@@ -151,12 +180,15 @@ async function loadPosts() {
             a.style.color = 'inherit';
             a.style.textDecoration = 'none';
             tdTitle.appendChild(a);
+            tdTitle.dataset.label = '\u6807\u9898';
 
             const tdDate = document.createElement('td');
             tdDate.textContent = p.date || '';
+            tdDate.dataset.label = '\u65e5\u671f';
 
             const tdCol = document.createElement('td');
             tdCol.innerHTML = p.columnId ? `<span class="pill mono">${p.columnId}</span>` : '<span class="pill">-</span>';
+            tdCol.dataset.label = '\u4e13\u680f';
 
             const tdActions = document.createElement('td');
             const btnEdit = buildBtn('编辑', '', () => (window.location.href = `/editor.html?id=${encodeURIComponent(p.id)}`));
@@ -165,6 +197,7 @@ async function loadPosts() {
                 await deletePost(p.id);
             });
             tdActions.appendChild(buildActionButtons([btnEdit, btnDel]));
+            tdActions.dataset.label = '\u64cd\u4f5c';
 
             tr.appendChild(tdId);
             tr.appendChild(tdTitle);
@@ -810,6 +843,7 @@ async function boot() {
     const loginPanel = document.getElementById('login-panel');
     const appPanel = document.getElementById('app-panel');
     const sidebar = document.getElementById('sidebar');
+    closeSidebar();
     const ok = await checkSession();
 
     if (!ok) {
@@ -822,6 +856,7 @@ async function boot() {
     if (loginPanel) loginPanel.style.display = 'none';
     if (appPanel) appPanel.style.display = '';
     if (sidebar) sidebar.style.display = '';
+    syncSidebarState();
 
     showPanel('dashboard');
     await loadDashboard();
@@ -961,6 +996,20 @@ function renderTimeline(posts, comments) {
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.sidebar-link').forEach(btn => {
         btn.addEventListener('click', () => showPanel(btn.getAttribute('data-tab')));
+    });
+
+    const menuToggleBtn = document.getElementById('mobile-menu-toggle');
+    if (menuToggleBtn) menuToggleBtn.addEventListener('click', toggleSidebar);
+
+    const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
+    if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
+
+    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+    if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
+
+    window.addEventListener('resize', syncSidebarState);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeSidebar();
     });
 
     const refreshDashboard = document.getElementById('btn-refresh-dashboard');

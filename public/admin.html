@@ -7,7 +7,7 @@
     <title>管理后台 | 又来笔记</title>
     <meta name="description" content="管理后台：文章、留言审核、专栏等。">
     <link rel="icon" type="image/jpeg" href="/img/icon.png">
-    <link rel="stylesheet" href="/css/admin.css?v=8">
+    <link rel="stylesheet" href="/css/admin.css?v=9">
 </head>
 
 <body>
@@ -15,6 +15,12 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">
                 <div class="brand">又来笔记</div>
+                <button id="sidebar-close-btn" class="mobile-icon-btn sidebar-close-btn" type="button" aria-label="close sidebar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <nav class="sidebar-nav">
                 <ul class="sidebar-menu">
@@ -67,6 +73,7 @@
                 </button>
             </div>
         </aside>
+        <button id="sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="close sidebar"></button>
 
         <section id="login-panel" class="panel" style="display:none;">
             <h2>管理员登录</h2>
@@ -86,7 +93,16 @@
 
         <main class="main-content" id="app-panel" style="display:none;">
             <header class="main-header">
-                <h1 id="page-title">文章管理</h1>
+                <div class="main-header-left">
+                    <button id="mobile-menu-toggle" class="mobile-icon-btn header-menu-btn" type="button" aria-label="open sidebar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <h1 id="page-title">文章管理</h1>
+                </div>
                 <div class="header-actions" id="header-actions"></div>
             </header>
 
@@ -376,7 +392,7 @@
         </div>
     </div>
 
-    <script src="/js/admin.js?v=6"></script>
+    <script src="/js/admin.js?v=7"></script>
 </body>
 
 </html>

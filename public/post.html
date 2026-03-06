@@ -285,6 +285,12 @@
         <main class="article-main">
             <div id="content-render-area" class="markdown-body"></div>
             <section id="post-comments" style="margin-top: 40px; display:none;">
+                <div style="font-size:2.1rem; font-weight:900; letter-spacing:1px; line-height:1.2;">文章留言板</div>
+                <div style="height:0; border-top:4px solid var(--p5-black); margin:14px 0 18px;"></div>
+                <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+                    <a href="/message-board" style="font-weight:700; color:var(--p5-black); text-decoration:none; border-bottom:2px solid var(--p5-black); padding-bottom:2px;">网站留言板</a>
+                </div>
+                <div id="post-comments-list" class="site-comment-list" style="margin-top: 18px;"></div>
                 <div class="comment-form" style="margin-top:34px; padding-top:34px; border-top:2px dashed #ccc;">
                     <h3 style="margin-bottom:18px;">发表留言</h3>
                     <div class="comment-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%;">
@@ -311,7 +317,6 @@
                         <button id="post-comment-submit" class="p5-cta-btn" type="button">提交</button>
                     </div>
                 </div>
-                <div id="post-comments-list" class="comment-list" style="margin-top: 18px;"></div>
             </section>
         </main>
     </div>
@@ -532,24 +537,24 @@
 
             function buildCommentCard(comment) {
                 const card = document.createElement('div');
-                card.className = 'comment-card';
+                card.className = 'site-comment-item';
 
                 const head = document.createElement('div');
-                head.className = 'comment-head';
+                head.className = 'site-comment-head';
 
                 const name = document.createElement('div');
-                name.className = 'comment-name';
+                name.className = 'site-comment-name';
                 name.textContent = comment?.name || '匿名访客';
 
                 const time = document.createElement('div');
-                time.className = 'comment-time';
+                time.className = 'site-comment-time';
                 time.textContent = formatDateTime(comment?.createdAt);
 
                 head.appendChild(name);
                 head.appendChild(time);
 
                 const body = document.createElement('div');
-                body.className = 'comment-body';
+                body.className = 'site-comment-body';
                 body.textContent = comment?.content || '';
 
                 card.appendChild(head);

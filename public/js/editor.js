@@ -2,6 +2,7 @@
 const input = document.getElementById('markdown-input');
 const preview = document.getElementById('preview-content');
 let currentEditingId = null;
+let generatedPostId = null;
 let columnsCache = [];
 function getAdminToken() {
     return localStorage.getItem('YOULAI_ADMIN_TOKEN') || '';
@@ -11,6 +12,27 @@ function withAdminHeaders(headers) {
     const token = getAdminToken();
     if (!token) return headers;
     return { ...headers, 'x-admin-token': token };
+}
+
+function buildPostId() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = String(now.getHours()).padStart(2, '0');
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const second = String(now.getSeconds()).padStart(2, '0');
+    const millisecond = String(now.getMilliseconds()).padStart(3, '0');
+    const random = Math.random().toString(36).slice(2, 6);
+    return `post_${year}${month}${day}_${hour}${minute}${second}${millisecond}_${random}`;
+}
+
+function getPostIdForPublish() {
+    if (currentEditingId) return currentEditingId;
+    if (!generatedPostId) {
+        generatedPostId = buildPostId();
+    }
+    return generatedPostId;
 }
 
 // 切换文章信息面板
@@ -531,9 +553,10 @@ async function publish() {
     const originalHTML = btn.innerHTML;
     btn.innerHTML = '<span>发布中...</span>';
     btn.disabled = true;
+    const postId = getPostIdForPublish();
 
     const data = {
-        id: currentEditingId,
+        id: postId,
         title,
         content,
         date,

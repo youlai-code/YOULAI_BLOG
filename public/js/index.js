@@ -5,6 +5,30 @@ let allPostsCache = [];
 let currentFilteredPosts = []; // 当前筛选后的所有文章
 let currentPage = 1;
 const ITEMS_PER_PAGE = 6; // 每页显示几篇文章
+const SOCIAL_ICON_CLASS_MAP = {
+    github: 'fab fa-github',
+    douyin: 'fab fa-tiktok',
+    qq: 'fab fa-qq',
+    email: 'fas fa-envelope',
+    bilibili: 'fab fa-bilibili'
+};
+const SOCIAL_LABEL_MAP = {
+    github: 'GitHub',
+    douyin: 'Douyin',
+    qq: 'QQ',
+    email: 'Email',
+    bilibili: 'Bilibili'
+};
+
+function normalizeSocialConfig(key, social) {
+    const fallbackIcon = SOCIAL_ICON_CLASS_MAP[key] || '';
+    const fallbackLabel = SOCIAL_LABEL_MAP[key] || key;
+    return {
+        url: String(social?.url || '').trim(),
+        icon: String(social?.icon || fallbackIcon).trim(),
+        label: String(social?.label || fallbackLabel).trim()
+    };
+}
 
 function getPostUrl(postId) {
     const base = window.SITE_CONFIG?.seo?.postSubdomainBase;
@@ -292,13 +316,24 @@ function applySiteConfig(config) {
         container.innerHTML = '';
 
         Object.entries(config.social).forEach(([key, social]) => {
+            const normalizedSocial = normalizeSocialConfig(key, social);
+            if (!normalizedSocial.url) return;
+
             const link = document.createElement('a');
-            link.href = social.url;
+            link.href = normalizedSocial.url;
             link.className = 'social-link';
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            link.title = social.label;
-            link.innerHTML = `<i class="${social.icon}"></i>`;
+            link.title = normalizedSocial.label;
+            link.setAttribute('aria-label', normalizedSocial.label);
+
+            const icon = document.createElement('i');
+            normalizedSocial.icon.split(/\s+/).filter(Boolean).forEach(className => icon.classList.add(className));
+            if (icon.classList.length === 0) {
+                icon.classList.add('fas', 'fa-link');
+            }
+
+            link.appendChild(icon);
             container.appendChild(link);
         });
 
@@ -994,11 +1029,14 @@ async function showPost(postId, updateHistory = true) {
             <div class="markdown-body paper-pattern-white" style="padding:40px; box-shadow:10px 10px 0 var(--p5-black); border-top:5px solid var(--p5-black);">
                 <h1 style="border-bottom:3px solid black; padding-bottom:10px; margin-bottom:20px;">${title}</h1>
                 <div style="color:#666; margin-bottom:30px; font-weight:bold;">${date}</div>
-                <div id="post-comments" style="margin-bottom: 26px;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                        <div style="font-family:'Bangers'; font-size:1.6rem;">文章留言</div>
-                        <a class="p5-link-btn" href="/message-board">网站留言板</a>
+                ${htmlContent}
+                <div id="post-comments" style="margin-top: 34px;">
+                    <div style="font-size:2.1rem; font-weight:900; letter-spacing:1px; line-height:1.2;">文章留言板</div>
+                    <div style="height:0; border-top:4px solid var(--p5-black); margin:14px 0 18px;"></div>
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:4px;">
+                        <a href="/message-board" style="font-weight:700; color:var(--p5-black); text-decoration:none; border-bottom:2px solid var(--p5-black); padding-bottom:2px;">网站留言板</a>
                     </div>
+                    <div id="post-comments-list" class="site-comment-list" style="margin-top: 16px;"></div>
                     <div class="comment-form" style="margin-top:14px;">
                         <div class="comment-form-row">
                             <div class="comment-field">
@@ -1019,9 +1057,7 @@ async function showPost(postId, updateHistory = true) {
                             <div id="post-comment-status" class="comment-status"></div>
                         </div>
                     </div>
-                    <div id="post-comments-list" class="comment-list" style="margin-top: 16px;"></div>
                 </div>
-                ${htmlContent}
             </div>
         `;
 
@@ -1077,24 +1113,24 @@ function formatDateTime(iso) {
 
 function buildCommentCard(comment) {
     const card = document.createElement('div');
-    card.className = 'comment-card';
+    card.className = 'site-comment-item';
 
     const head = document.createElement('div');
-    head.className = 'comment-head';
+    head.className = 'site-comment-head';
 
     const name = document.createElement('div');
-    name.className = 'comment-name';
+    name.className = 'site-comment-name';
     name.textContent = comment?.name || '匿名访客';
 
     const time = document.createElement('div');
-    time.className = 'comment-time';
+    time.className = 'site-comment-time';
     time.textContent = formatDateTime(comment?.createdAt);
 
     head.appendChild(name);
     head.appendChild(time);
 
     const body = document.createElement('div');
-    body.className = 'comment-body';
+    body.className = 'site-comment-body';
     body.textContent = comment?.content || '';
 
     card.appendChild(head);
